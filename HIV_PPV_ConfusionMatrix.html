@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HIV 진단 · PPV & Confusion Matrix 통합 분석</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --border-mid: #cbd5e1;
+  --text: #1e293b;
+  --text-sec: #64748b;
+  --text-ter: #94a3b8;
+  --green: #1D9E75; --green-bg: #effaf5; --green-light: #9FE1CB;
+  --red: #E24B4A; --red-bg: #fff1f1; --red-light: #F7C1C1;
+  --amber: #EF9F27; --amber-bg: #fef8ec;
+  --blue: #3B8BD4; --blue-bg: #edf4fc;
+  --purple: #7F77DD; --purple-bg: #f3f2fd;
+  --coral: #D85A30; --coral-bg: #fef1ec;
+  --gray: #888780;
+  --radius: 10px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 24px 16px 48px;
+}
+
+.page-wrap { max-width: 860px; margin: 0 auto; }
+
+/* ── Header ── */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.page-header p { font-size: 13px; color: var(--text-sec); }
+
+/* ── Section label ── */
+.section-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-ter);
+  margin-bottom: 10px;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+/* ── Group buttons ── */
+.btn-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 18px; }
+.sc-btn {
+  padding: 5px 13px; border-radius: 20px;
+  border: 1px solid var(--border-mid);
+  background: transparent; font-size: 12px;
+  color: var(--text-sec); cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+}
+.sc-btn.active {
+  background: #1e40af; border-color: #1e40af;
+  color: #fff; font-weight: 600;
+}
+.sc-btn:hover:not(.active) { background: var(--bg); }
+
+/* ── Metrics row ── */
+.metrics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+.metric {
+  background: var(--bg);
+  border-radius: 8px; padding: 12px 14px;
+  border: 1px solid var(--border);
+}
+.metric-l { font-size: 10px; color: var(--text-sec); margin-bottom: 4px; font-weight: 500; }
+.metric-v { font-size: 26px; font-weight: 700; line-height: 1.1; }
+.metric-sub { font-size: 10px; color: var(--text-ter); margin-top: 3px; }
+
+/* ── Bar ── */
+.bar-label { font-size: 11px; color: var(--text-sec); margin-bottom: 5px; }
+.bar-wrap {
+  height: 30px; border-radius: 6px; overflow: hidden;
+  display: flex; background: var(--bg);
+  border: 1px solid var(--border); margin-bottom: 6px;
+}
+.bar-tp { background: var(--green); transition: width 0.4s ease; }
+.bar-fp { background: var(--red); transition: width 0.4s ease; }
+.bar-leg { display: flex; gap: 18px; font-size: 11px; color: var(--text-sec); margin-bottom: 18px; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+/* ── Natural frequency grid ── */
+.nf-title { font-size: 11px; color: var(--text-sec); margin-bottom: 8px; font-weight: 500; }
+.nf-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.nf-cell {
+  border-radius: 8px; padding: 10px 8px;
+  text-align: center; border: 1px solid var(--border);
+}
+.nf-v { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+.nf-l { font-size: 10px; color: var(--text-sec); }
+
+/* ── Freq note ── */
+.freq-note {
+  background: var(--bg); border-radius: 8px;
+  padding: 11px 14px; font-size: 12px;
+  color: var(--text-sec); line-height: 1.8;
+  border: 1px solid var(--border);
+}
+.freq-note strong { color: var(--text); font-weight: 600; }
+.warn { color: #991b1b; font-weight: 600; }
+
+/* ── Confusion Matrix ── */
+.cm-wrap { margin-top: 4px; }
+.cm-outer {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr;
+  grid-template-rows: 36px 1fr 1fr 36px;
+  gap: 4px;
+  max-width: 560px;
+  margin: 0 auto 16px;
+}
+.cm-header {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; color: var(--text-sec);
+  border-radius: 6px; padding: 4px;
+}
+.cm-row-label {
+  display: flex; align-items: center; justify-content: flex-end;
+  font-size: 11px; font-weight: 600; color: var(--text-sec);
+  padding-right: 8px;
+}
+.cm-cell {
+  border-radius: 8px; padding: 12px 10px;
+  text-align: center; border: 1px solid transparent;
+  transition: all 0.4s ease;
+}
+.cm-cell-label { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; margin-bottom: 4px; }
+.cm-cell-count { font-size: 22px; font-weight: 800; margin-bottom: 2px; }
+.cm-cell-pct { font-size: 10px; }
+.cm-cell-name { font-size: 10px; color: inherit; opacity: 0.7; margin-top: 1px; }
+
+.cm-tp { background: #d1fae5; border-color: var(--green); color: #065f46; }
+.cm-fp { background: #fee2e2; border-color: var(--red); color: #991b1b; }
+.cm-fn { background: #fef3c7; border-color: var(--amber); color: #92400e; }
+.cm-tn { background: #f1f5f9; border-color: #94a3b8; color: #475569; }
+.cm-total { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-sec); font-weight: 500; }
+
+/* Axis labels for CM */
+.cm-axis-col { grid-column: 2 / 4; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.cm-axis-row { grid-row: 2 / 4; display: flex; align-items: center; justify-content: center; }
+.cm-axis-text { font-size: 11px; font-weight: 700; color: var(--text-sec); letter-spacing: 0.05em; }
+
+/* Derived stats from CM */
+.cm-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 560px; margin: 0 auto 16px; }
+.cm-stat {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.cm-stat-l { font-size: 11px; color: var(--text-sec); }
+.cm-stat-v { font-size: 16px; font-weight: 700; color: var(--text); }
+
+/* ── Chart ── */
+.chart-container { position: relative; width: 100%; height: 240px; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cl-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-sec); }
+.cl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Divider ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 20px; }
+
+/* ── Threshold annotation ── */
+.threshold-note {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: #fffbeb; border: 1px solid #fcd34d;
+  border-radius: 8px; padding: 11px 14px; margin-bottom: 16px;
+  font-size: 12px; color: #92400e; line-height: 1.7;
+}
+.threshold-note strong { font-weight: 600; }
+
+/* ── Print / download hint ── */
+.download-note { text-align: center; font-size: 11px; color: var(--text-ter); padding-top: 8px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<!-- ───────── HEADER ───────── -->
+<div class="page-header">
+  <h1>HIV 진단 · PPV / Confusion Matrix 통합 분석</h1>
+  <p>검사 성능: 4세대 Ag/Ab 병합검사 · <strong>민감도(Se) = 특이도(Sp) = 99.5%</strong> 고정 &nbsp;|&nbsp; 집단 크기: 10만 명 기준 &nbsp;|&nbsp; Bayes 정리 기반 실시간 계산</p>
+</div>
+
+<!-- ───────── SECTION 1: Group selector + metrics ───────── -->
+<div class="card">
+  <p class="section-label">위험군 선택 → PPV / NPV 실시간 계산</p>
+  <div class="btn-row" id="btnRow"></div>
+
+  <div class="metrics-row">
+    <div class="metric">
+      <p class="metric-l">사전 확률 (유병률)</p>
+      <p class="metric-v" id="prevDisp" style="color:var(--text)">—</p>
+      <p class="metric-sub" id="prevNote">—</p>
+    </div>
+    <div class="metric">
+      <p class="metric-l">양성예측도 (PPV)</p>
+      <p class="metric-v" id="ppvNum">—</p>
+      <p class="metric-sub" id="ppvNote">—</p>
+    </div>
+    <div class="metric">
+      <p class="metric-l">음성예측도 (NPV)</p>
+      <p class="metric-v" id="npvNum" style="color:var(--green)">—</p>
+      <p class="metric-sub">음성이면 감염 가능성 극히 낮음</p>
+    </div>
+  </div>
+
+  <p class="bar-label">양성 판정의 구성 — 진양성(TP) vs 위양성(FP)</p>
+  <div class="bar-wrap">
+    <div class="bar-tp" id="barTP" style="width:50%"></div>
+    <div class="bar-fp" id="barFP" style="width:50%"></div>
+  </div>
+  <div class="bar-leg">
+    <span><span class="dot" style="background:var(--green)"></span>진양성 (True Positive) — 실제 HIV+</span>
+    <span><span class="dot" style="background:var(--red)"></span>위양성 (False Positive) — 실제 HIV-</span>
+  </div>
+
+  <p class="nf-title">10만 명 검사 시 자연 빈도 (Natural Frequency)</p>
+  <div class="nf-grid">
+    <div class="nf-cell" style="border-top:3px solid var(--green)">
+      <div class="nf-v" style="color:var(--green)" id="sTP">—</div>
+      <div class="nf-l">진양성 (TP)</div>
+    </div>
+    <div class="nf-cell" style="border-top:3px solid var(--red)">
+      <div class="nf-v" style="color:var(--red)" id="sFP">—</div>
+      <div class="nf-l">위양성 (FP)</div>
+    </div>
+    <div class="nf-cell" style="border-top:3px solid var(--amber)">
+      <div class="nf-v" style="color:var(--amber)" id="sFN">—</div>
+      <div class="nf-l">위음성 (FN)</div>
+    </div>
+    <div class="nf-cell" style="border-top:3px solid var(--gray)">
+      <div class="nf-v" style="color:var(--text-sec)" id="sTN">—</div>
+      <div class="nf-l">진음성 (TN)</div>
+    </div>
+  </div>
+
+  <div class="freq-note" id="freqBox">위험군을 선택하면 10만 명 기준 분석이 표시됩니다.</div>
+</div>
+
+<!-- ───────── SECTION 2: Confusion Matrix ───────── -->
+<div class="card">
+  <p class="section-label">Confusion Matrix — 사전 확률별 분포 시각화</p>
+
+  <div class="cm-wrap">
+    <!-- Axis label: top -->
+    <div style="display:flex; max-width:560px; margin:0 auto 4px; padding-left:90px; gap:4px">
+      <div style="flex:1; text-align:center; font-size:11px; font-weight:700; color:var(--text-sec); letter-spacing:0.06em; padding:4px 0; background:var(--bg); border-radius:6px">실제 양성 (HIV+)</div>
+      <div style="flex:1; text-align:center; font-size:11px; font-weight:700; color:var(--text-sec); letter-spacing:0.06em; padding:4px 0; background:var(--bg); border-radius:6px">실제 음성 (HIV-)</div>
+    </div>
+
+    <!-- Matrix grid -->
+    <div style="display:grid; grid-template-columns:90px 1fr 1fr; gap:4px; max-width:560px; margin:0 auto 4px;">
+      <!-- Row labels: grid-row span 2 so FN/TN stay in col 2-3 -->
+      <div style="display:grid; grid-template-rows:1fr 1fr; gap:4px; grid-row: span 2;">
+        <div style="display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-size:11px; font-weight:700; color:var(--text-sec);">검사<br>양성</div>
+        <div style="display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-size:11px; font-weight:700; color:var(--text-sec);">검사<br>음성</div>
+      </div>
+      <!-- TP -->
+      <div class="cm-cell cm-tp" id="cmTP">
+        <div class="cm-cell-label">TP · 진양성</div>
+        <div class="cm-cell-count" id="cmTPv">—</div>
+        <div class="cm-cell-pct" id="cmTPpct">—</div>
+        <div class="cm-cell-name">실제감염 · 검사양성</div>
+      </div>
+      <!-- FP -->
+      <div class="cm-cell cm-fp" id="cmFP">
+        <div class="cm-cell-label">FP · 위양성</div>
+        <div class="cm-cell-count" id="cmFPv">—</div>
+        <div class="cm-cell-pct" id="cmFPpct">—</div>
+        <div class="cm-cell-name">비감염 · 검사양성</div>
+      </div>
+      <!-- FN -->
+      <div class="cm-cell cm-fn" id="cmFN">
+        <div class="cm-cell-label">FN · 위음성</div>
+        <div class="cm-cell-count" id="cmFNv">—</div>
+        <div class="cm-cell-pct" id="cmFNpct">—</div>
+        <div class="cm-cell-name">실제감염 · 검사음성</div>
+      </div>
+      <!-- TN -->
+      <div class="cm-cell cm-tn" id="cmTN">
+        <div class="cm-cell-label">TN · 진음성</div>
+        <div class="cm-cell-count" id="cmTNv">—</div>
+        <div class="cm-cell-pct" id="cmTNpct">—</div>
+        <div class="cm-cell-name">비감염 · 검사음성</div>
+      </div>
+    </div>
+
+    <!-- Row totals -->
+    <div style="display:grid; grid-template-columns:90px 1fr 1fr; gap:4px; max-width:560px; margin:0 auto 4px;">
+      <div style="font-size:10px; color:var(--text-ter); display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">합계</div>
+      <div style="background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:5px 8px; text-align:center; font-size:11px; color:var(--text-sec);">HIV+ 총 <strong id="totInfected" style="color:var(--text)">—</strong>명</div>
+      <div style="background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:5px 8px; text-align:center; font-size:11px; color:var(--text-sec);">HIV- 총 <strong id="totHealthy" style="color:var(--text)">—</strong>명</div>
+    </div>
+
+    <!-- Axis label: left (검사 결과) -->
+    <div style="text-align:center; font-size:10px; color:var(--text-ter); max-width:560px; margin:6px auto 0;">
+      ← 검사 결과 (행) &nbsp;×&nbsp; 실제 감염 여부 (열) →
+    </div>
+  </div>
+
+  <!-- Derived stats from CM -->
+  <div class="cm-stats" style="margin-top:14px;">
+    <div class="cm-stat">
+      <span class="cm-stat-l">양성예측도 PPV<br><small style="color:var(--text-ter)">= TP ÷ (TP+FP)</small></span>
+      <span class="cm-stat-v" id="cmPPV" style="color:var(--green)">—</span>
+    </div>
+    <div class="cm-stat">
+      <span class="cm-stat-l">음성예측도 NPV<br><small style="color:var(--text-ter)">= TN ÷ (TN+FN)</small></span>
+      <span class="cm-stat-v" id="cmNPV" style="color:var(--blue)">—</span>
+    </div>
+    <div class="cm-stat">
+      <span class="cm-stat-l">민감도 Se (고정)<br><small style="color:var(--text-ter)">= TP ÷ (TP+FN)</small></span>
+      <span class="cm-stat-v" style="color:var(--amber)">99.5%</span>
+    </div>
+    <div class="cm-stat">
+      <span class="cm-stat-l">특이도 Sp (고정)<br><small style="color:var(--text-ter)">= TN ÷ (TN+FP)</small></span>
+      <span class="cm-stat-v" style="color:var(--amber)">99.5%</span>
+    </div>
+  </div>
+
+  <!-- Key insight -->
+  <div class="threshold-note" id="cmInsight">
+    위험군을 선택하면 인사이트가 표시됩니다.
+  </div>
+</div>
+
+<!-- ───────── SECTION 3: PPV Curve ───────── -->
+<div class="card">
+  <p class="section-label">사전 확률 → PPV 변화 곡선 (Se = Sp = 99.5%)</p>
+  <div class="chart-container">
+    <canvas id="ppvChart"></canvas>
+  </div>
+  <div class="chart-legend" id="chartLegend"></div>
+  <p style="font-size:10px; color:var(--text-ter); text-align:center; margin-top:8px;">
+    가로축: 사전 확률 % (로그 스케일) &nbsp;·&nbsp; 세로축: PPV (%) &nbsp;·&nbsp; 점: 각 시나리오 위치 &nbsp;·&nbsp; 점선: PPV = 50% 기준선
+  </p>
+</div>
+
+<!-- ───────── SECTION 4: Interpretation ───────── -->
+<div class="card" style="background:linear-gradient(135deg,#f0fdf4 0%,#f8faff 100%); border-color:#a7f3d0;">
+  <p class="section-label" style="color:#065f46;">핵심 해석 — Bayes 정리가 말하는 것</p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:12px; line-height:1.8; color:#1e293b;">
+    <div>
+      <strong>왜 Se/Sp가 99.5%여도 PPV가 낮을 수 있나?</strong><br>
+      저유병률 집단에서는 위음성(FP) 모수 자체가 압도적으로 크기 때문. 일반 인구 10만 명 중 HIV- 는 99,985명 — 이 중 0.5%가 위양성이면 499명 발생, 실제 감염자(15명)의 33배.
+    </div>
+    <div>
+      <strong>임상적 함의 — 누구에게 검사를 할 것인가?</strong><br>
+      저위험군 스크리닝은 위양성 폭풍을 유발. PPV &lt; 50%이면 양성 판정 자체가 '위양성일 가능성이 높다'는 의미. 사전 확률을 높이는 것(위험군 선별)이 검사 정확도를 높이는 핵심 전략.
+    </div>
+    <div>
+      <strong>가정의학과 관점 — 1차 의료의 딜레마</strong><br>
+      1차 의료에서는 사전 확률이 낮은 집단을 광범위하게 봄. 같은 검사도 3차 병원(고위험군)보다 PPV가 훨씬 낮음. <em>검사 역치(test threshold)</em>를 의식적으로 높여야 하는 이유.
+    </div>
+    <div>
+      <strong>EBM = Bayesian Update</strong><br>
+      추가 검사(Step 2, 3)는 Posterior를 새로운 Prior로 삼는 반복 업데이트. HIV 확진 3단계 알고리즘이 이를 구현. LR이 높은 검사일수록 Prior를 빠르게 역치 너머로 이동시킴.
+    </div>
+  </div>
+</div>
+
+<p class="download-note">이 파일은 단독 실행 가능한 HTML입니다 · 인터넷 연결 없이도 Chart.js CDN 로드 후 정상 작동</p>
+
+</div><!-- end page-wrap -->
+
+<script>
+const SE = 0.995, SP = 0.995, N = 100000;
+
+const groups = [
+  { id:'blood',    label:'헌혈자',         prev:0.00003, color:'#3B8BD4', bg:'#EDF4FC',
+    note:'헌혈자 선별 (~0.003%) · 국내 헌혈자 HIV 유병률',    ctx:'저위험 (비위험행동군)' },
+  { id:'gen',      label:'일반 인구',       prev:0.00015, color:'#1D9E75', bg:'#EFFAF5',
+    note:'위험행동 없는 일반인 (~0.015%)',                    ctx:'저위험 (비위험행동군)' },
+  { id:'needlestick',label:'의료인 침습사고',prev:0.003,  color:'#639922', bg:'#EAF3DE',
+    note:'HIV+ 혈액 침습사고 (~0.3%) · 1회 노출 평균',       ctx:'중간위험' },
+  { id:'sti',      label:'성병 클리닉',     prev:0.015,   color:'#EF9F27', bg:'#FEF8EC',
+    note:'STI 클리닉 내원 (~1.5%)',                          ctx:'중간위험' },
+  { id:'ivdu',     label:'정맥마약 사용자', prev:0.06,    color:'#D85A30', bg:'#FEF1EC',
+    note:'주사기 공유 등 고위험 (~6%)',                       ctx:'고위험군' },
+  { id:'msm',      label:'MSM',            prev:0.08,    color:'#7F77DD', bg:'#F3F2FD',
+    note:'남성 동성애자 (MSM, ~8%)',                          ctx:'고위험군' },
+  { id:'partner',  label:'HIV+ 파트너',    prev:0.20,    color:'#E24B4A', bg:'#FFF1F1',
+    note:'HIV+ 확진자의 성적 파트너 (~20%)',                  ctx:'고위험군' },
+];
+
+function ppv(p)  { const tp=SE*p, fp=(1-SP)*(1-p); return tp/(tp+fp); }
+function npv(p)  { const tn=SP*(1-p), fn=(1-SE)*p; return tn/(tn+fn); }
+
+function fmtPrev(p) {
+  if(p<0.0001) return (p*100).toFixed(4)+'%';
+  if(p<0.001)  return (p*100).toFixed(3)+'%';
+  if(p<0.1)    return (p*100).toFixed(2)+'%';
+  return (p*100).toFixed(1)+'%';
+}
+function fmtN(n) { return Math.round(n).toLocaleString('ko-KR'); }
+function fmtPct(v,d=1) { return (v*100).toFixed(d)+'%'; }
+
+function renderGroup(g) {
+  const p = g.prev;
+  const pv = ppv(p), nv = npv(p);
+  const infected = Math.round(N*p), healthy = N-infected;
+  const tp = Math.round(infected*SE);
+  const fn = infected-tp;
+  const fp = Math.round(healthy*(1-SP));
+  const tn = healthy-fp;
+  const totalPos = tp+fp, totalNeg = fn+tn;
+  const ppvPct = pv*100, npvPct = nv*100;
+
+  // Metrics
+  document.getElementById('prevDisp').textContent = fmtPrev(p);
+  document.getElementById('prevNote').textContent = g.ctx;
+
+  const ppvEl = document.getElementById('ppvNum');
+  ppvEl.textContent = ppvPct.toFixed(1)+'%';
+  ppvEl.style.color = ppvPct<20?'#dc2626':ppvPct<60?'#d97706':'#16a34a';
+
+  const ppvNoteEl = document.getElementById('ppvNote');
+  if(ppvPct<10)  ppvNoteEl.textContent='⚠ 양성 대부분이 위양성';
+  else if(ppvPct<30) ppvNoteEl.textContent='⚠ 양성 중 위양성 다수';
+  else if(ppvPct<60) ppvNoteEl.textContent='확진 추가 검사 권고';
+  else           ppvNoteEl.textContent='양성 신뢰도 높음';
+
+  const npvEl = document.getElementById('npvNum');
+  npvEl.textContent = npvPct>99.99?'≥99.99%':npvPct.toFixed(2)+'%';
+
+  // Bar
+  document.getElementById('barTP').style.width = ppvPct.toFixed(2)+'%';
+  document.getElementById('barFP').style.width = (100-ppvPct).toFixed(2)+'%';
+
+  // Natural freq
+  document.getElementById('sTP').textContent = fmtN(tp);
+  document.getElementById('sFP').textContent = fmtN(fp);
+  document.getElementById('sFN').textContent = fmtN(fn);
+  document.getElementById('sTN').textContent = fmtN(tn);
+
+  // Freq note
+  let warn='';
+  if(ppvPct<10) warn=`<br><span class="warn">⚠ 양성 ${fmtN(totalPos)}명 중 진양성은 고작 ${fmtN(tp)}명 (${ppvPct.toFixed(1)}%) — 위양성이 압도적으로 많습니다.</span>`;
+  else if(ppvPct<50) warn=`<br>→ 양성 판정 <strong>${fmtN(totalPos)}명</strong> 중 실제 감염자는 <strong>${ppvPct.toFixed(1)}%</strong>뿐. 확진 검사 필수.`;
+  document.getElementById('freqBox').innerHTML =
+    `<strong>${g.note}</strong><br>
+    HIV 감염자 <strong>${fmtN(infected)}명</strong> / 비감염자 <strong>${fmtN(healthy)}명</strong> &nbsp;(검사 전 인구 ${fmtN(N)}명)<br>
+    양성 반응 합계 <strong>${fmtN(totalPos)}명</strong> = 진양성 <strong style="color:#16a34a">${fmtN(tp)}명</strong> + 위양성 <strong style="color:#dc2626">${fmtN(fp)}명</strong>${warn}`;
+
+  // ── Confusion Matrix ──
+  const pct = v => '전체의 '+(v/N*100).toFixed(2)+'%';
+  document.getElementById('cmTPv').textContent   = fmtN(tp);
+  document.getElementById('cmTPpct').textContent = pct(tp);
+  document.getElementById('cmFPv').textContent   = fmtN(fp);
+  document.getElementById('cmFPpct').textContent = pct(fp);
+  document.getElementById('cmFNv').textContent   = fmtN(fn);
+  document.getElementById('cmFNpct').textContent = pct(fn);
+  document.getElementById('cmTNv').textContent   = fmtN(tn);
+  document.getElementById('cmTNpct').textContent = pct(tn);
+  document.getElementById('totInfected').textContent = fmtN(infected);
+  document.getElementById('totHealthy').textContent  = fmtN(healthy);
+
+  // CM derived stats
+  document.getElementById('cmPPV').textContent = ppvPct.toFixed(1)+'%';
+  document.getElementById('cmPPV').style.color = ppvPct<30?'#dc2626':ppvPct<70?'#d97706':'#16a34a';
+  document.getElementById('cmNPV').textContent = npvPct>99.99?'≥99.99%':npvPct.toFixed(2)+'%';
+
+  // CM cell size animation: scale font by relative size
+  const maxN = Math.max(tp,fp,fn,tn,1);
+  ['cmTP','cmFP','cmFN','cmTN'].forEach((id,i)=>{
+    const vals = [tp,fp,fn,tn];
+    const ratio = Math.sqrt(vals[i]/maxN);
+    const fSize = Math.max(14, Math.min(28, 14+ratio*14));
+    document.querySelector('#'+id+' .cm-cell-count').style.fontSize = fSize+'px';
+  });
+
+  // Insight
+  let insight = '';
+  if(ppvPct<10){
+    insight=`<strong>⚠ 위양성 주의:</strong> 이 집단에서 양성 판정을 받은 ${fmtN(totalPos)}명 중 <strong>${(100-ppvPct).toFixed(0)}%가 실제로 비감염자</strong>입니다. 검사 양성이어도 확진 알고리즘(Step 2, 3)이 반드시 필요합니다. Bayes 관점에서 사전 확률이 낮으면 LR이 아무리 높아도 사후 확률이 역치를 넘기 어렵습니다.`;
+  } else if(ppvPct<50){
+    insight=`<strong>주의 구간:</strong> 양성 ${fmtN(totalPos)}명 중 진양성은 <strong>${ppvPct.toFixed(0)}%</strong>. 위양성이 과반입니다. 이 단계의 Posterior(${ppvPct.toFixed(0)}%)를 새로운 Prior로 삼아 Step 2 확인 검사를 시행하면 PPV가 급격히 상승합니다.`;
+  } else if(ppvPct<85){
+    insight=`<strong>중간 신뢰:</strong> 양성 ${fmtN(totalPos)}명 중 진양성이 <strong>${ppvPct.toFixed(0)}%</strong>. 수용 가능한 수준이지만 고위험 질환 특성상 확인 검사를 권장합니다. Posterior가 치료 역치를 충분히 넘었는지 확인하세요.`;
+  } else {
+    insight=`<strong>높은 신뢰:</strong> 사전 확률이 충분히 높아 검사 양성의 <strong>${ppvPct.toFixed(0)}%가 실제 감염</strong>. TP ${fmtN(tp)}명 vs FP ${fmtN(fp)}명 — 임상적으로 양성 결과를 신뢰할 수 있는 구간입니다.`;
+  }
+  document.getElementById('cmInsight').innerHTML = insight;
+
+  // Update chart dot
+  updateChartDot(g, p);
+}
+
+// ── Chart ──
+const lineData = [];
+for(let i=0; i<=500; i++){
+  const logMin = Math.log10(0.001), logMax = Math.log10(60);
+  const lp = logMin+(logMax-logMin)*i/500;
+  const pPct = Math.pow(10,lp);
+  lineData.push({ x:pPct, y:ppv(pPct/100)*100 });
+}
+
+const chartInstance = new Chart(document.getElementById('ppvChart'), {
+  type:'scatter',
+  data:{
+    datasets:[
+      { type:'line', label:'PPV 곡선', data:lineData, borderColor:'#3b82f6', borderWidth:2,
+        pointRadius:0, tension:0.15, fill:false, order:3 },
+      { type:'line', label:'PPV=50% 기준선',
+        data:[{x:0.001,y:50},{x:60,y:50}],
+        borderColor:'#94a3b8', borderWidth:1, borderDash:[5,4],
+        pointRadius:0, fill:false, order:4 },
+      ...groups.map(g=>({
+        type:'scatter', label:g.label,
+        data:[{x:g.prev*100, y:ppv(g.prev)*100}],
+        backgroundColor:g.color, borderColor:'#fff', borderWidth:2,
+        pointRadius:8, pointHoverRadius:11, order:1,
+      })),
+      // Active dot (highlighted)
+      { type:'scatter', label:'_active',
+        data:[{x:groups[1].prev*100, y:ppv(groups[1].prev)*100}],
+        backgroundColor:'#1e40af', borderColor:'#fff', borderWidth:3,
+        pointRadius:12, pointHoverRadius:14, order:0 }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{ display:false },
+      tooltip:{
+        callbacks:{
+          title:ctx=>{
+            const di = ctx[0].datasetIndex;
+            if(di===0) return '사전확률 '+ctx[0].parsed.x.toFixed(3)+'%';
+            if(di===1) return 'PPV=50% 기준선';
+            if(di===2+groups.length) return '선택된 그룹';
+            return groups[di-2].label;
+          },
+          label:ctx=>{
+            const di=ctx[0].datasetIndex;
+            if(di===0||di===1) return 'PPV: '+ctx[0].parsed.y.toFixed(1)+'%';
+            const gi = di===2+groups.length?null:groups[di-2];
+            if(!gi) return 'PPV: '+ctx[0].parsed.y.toFixed(1)+'%';
+            return ['사전확률: '+fmtPrev(gi.prev),'PPV: '+(ppv(gi.prev)*100).toFixed(1)+'%'];
+          }
+        }
+      }
+    },
+    scales:{
+      x:{ type:'logarithmic', min:0.001, max:60,
+          title:{ display:true, text:'사전 확률 (%)', font:{size:11}, color:'#64748b' },
+          ticks:{ callback:v=>{
+            const nv=[0.001,0.003,0.01,0.03,0.1,0.3,1,3,10,30];
+            const r=parseFloat(v.toPrecision(1));
+            return nv.some(n=>Math.abs(n-r)<1e-9)?r+'%':'';
+          }, font:{size:10}, color:'#64748b', maxTicksLimit:14 },
+          grid:{ color:'rgba(148,163,184,0.15)' }
+      },
+      y:{ min:0, max:100,
+          title:{ display:true, text:'PPV (%)', font:{size:11}, color:'#64748b' },
+          ticks:{ callback:v=>v+'%', font:{size:10}, color:'#64748b' },
+          grid:{ color:'rgba(148,163,184,0.15)' }
+      }
+    }
+  }
+});
+
+function updateChartDot(g, p) {
+  const activeIdx = 2+groups.length;
+  chartInstance.data.datasets[activeIdx].data = [{x:p*100, y:ppv(p)*100}];
+  chartInstance.data.datasets[activeIdx].backgroundColor = g.color;
+  chartInstance.update('active');
+}
+
+// ── Legend ──
+const legend = document.getElementById('chartLegend');
+groups.forEach(g=>{
+  const el = document.createElement('span');
+  el.className='cl-item';
+  el.innerHTML=`<span class="cl-dot" style="background:${g.color}"></span>${g.label} (${fmtPrev(g.prev)})`;
+  legend.appendChild(el);
+});
+
+// ── Buttons ──
+const row = document.getElementById('btnRow');
+let activeId = 'gen';
+groups.forEach(g=>{
+  const b = document.createElement('button');
+  b.className='sc-btn'+(g.id===activeId?' active':'');
+  b.textContent = g.label;
+  b.onclick=()=>{
+    document.querySelectorAll('.sc-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    activeId=g.id;
+    renderGroup(g);
+  };
+  row.appendChild(b);
+});
+renderGroup(groups.find(g=>g.id===activeId));
+</script>
+</body>
+</html>
