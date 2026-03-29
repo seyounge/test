@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HIMSS CCMM — 연속성 돌봄 성숙도 모델</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #f5f4f0;
+    --bg2:      #eeece7;
+    --surface:  #ffffff;
+    --surface2: #f9f8f5;
+    --border:   #e2dfd8;
+    --border2:  #d0cdc5;
+
+    --text:     #1a1917;
+    --text2:    #4a4844;
+    --text3:    #8a8680;
+
+    --blue:     #1d4ed8;
+    --blue-lt:  #eff6ff;
+    --blue-mid: #bfdbfe;
+    --cyan:     #0e7490;
+    --cyan-lt:  #ecfeff;
+    --green:    #15803d;
+    --green-lt: #f0fdf4;
+    --amber:    #b45309;
+    --amber-lt: #fffbeb;
+    --red:      #b91c1c;
+    --red-lt:   #fef2f2;
+    --orange:   #c2410c;
+    --orange-lt:#fff7ed;
+    --violet:   #6d28d9;
+    --violet-lt:#f5f3ff;
+    --slate:    #475569;
+
+    --not-bg:   #f1f5f9; --not-bd: #cbd5e1; --not-tx: #64748b;
+    --min-bg:   #fef2f2; --min-bd: #fca5a5; --min-tx: #b91c1c;
+    --som-bg:   #fff7ed; --som-bd: #fdba74; --som-tx: #c2410c;
+    --mos-bg:   #fffbeb; --mos-bd: #fcd34d; --mos-tx: #b45309;
+    --ful-bg:   #f0fdf4; --ful-bd: #86efac; --ful-tx: #15803d;
+    --na-bg:    #f8fafc; --na-bd:  #e2e8f0; --na-tx:  #94a3b8;
+
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow:    0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    /* subtle grain texture */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.025'/%3E%3C/svg%3E");
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .header-brand { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    width: 38px; height: 38px;
+    background: var(--blue);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 500; color: white;
+    letter-spacing: -0.5px; line-height: 1.3;
+    text-align: center;
+  }
+
+  .header-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px; font-weight: 700; color: var(--text);
+  }
+
+  .header-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--text3);
+    margin-top: 1px;
+  }
+
+  .header-right { display: flex; align-items: center; gap: 16px; }
+
+  .progress-wrap {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; color: var(--text3);
+  }
+
+  .prog-track {
+    width: 140px; height: 5px;
+    background: var(--border); border-radius: 3px; overflow: hidden;
+  }
+
+  .prog-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--cyan));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    max-width: 1200px; margin: 0 auto;
+    padding: 52px 32px 36px;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--blue);
+    letter-spacing: 1.5px; text-transform: uppercase;
+    background: var(--blue-lt);
+    border: 1px solid var(--blue-mid);
+    padding: 4px 12px; border-radius: 20px;
+    margin-bottom: 20px;
+  }
+
+  .hero-heading {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 36px; font-weight: 700;
+    color: var(--text); line-height: 1.25;
+    margin-bottom: 14px;
+  }
+
+  .hero-heading span { color: var(--blue); }
+
+  .hero-desc {
+    font-size: 14px; color: var(--text2);
+    max-width: 600px; line-height: 1.75;
+    margin-bottom: 36px;
+  }
+
+  /* ===== STATS ===== */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+    position: relative; overflow: hidden;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    border-radius: 14px 14px 0 0;
+  }
+  .stat-card.c-blue::after  { background: var(--blue); }
+  .stat-card.c-cyan::after  { background: var(--cyan); }
+  .stat-card.c-amber::after { background: var(--amber); }
+  .stat-card.c-green::after { background: var(--green); }
+
+  .stat-icon {
+    font-size: 22px; margin-bottom: 10px;
+    display: block;
+  }
+
+  .stat-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 30px; font-weight: 500;
+    color: var(--text); line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label { font-size: 12px; color: var(--text3); }
+
+  /* ===== SCORE PANEL ===== */
+  .score-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 40px;
+    margin-bottom: 40px;
+  }
+
+  .ring-wrap {
+    position: relative; width: 120px; height: 120px; flex-shrink: 0;
+  }
+
+  .ring-wrap svg { transform: rotate(-90deg); }
+
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+
+  .ring-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px; font-weight: 500; color: var(--text);
+  }
+
+  .ring-lbl {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .score-bars {
+    flex: 1;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  }
+
+  .sbar-item { display: flex; flex-direction: column; gap: 5px; }
+
+  .sbar-lbl { font-size: 11px; color: var(--text3); }
+
+  .sbar-track {
+    height: 7px; background: var(--bg2);
+    border-radius: 4px; overflow: hidden;
+  }
+
+  .sbar-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .sbar-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--text2);
+  }
+
+  /* ===== TABS ===== */
+  .tabs-wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px 80px; }
+
+  .tab-nav {
+    display: flex; gap: 2px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 30px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 500;
+    color: var(--text3);
+    background: none; border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { color: var(--text2); background: var(--bg2); border-radius: 6px 6px 0 0; }
+  .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+
+  .tab-panel { display: none; animation: fadeUp 0.3s ease; }
+  .tab-panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== SECTION HEADER ===== */
+  .sec-head {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sec-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+
+  .sec-icon.cl { background: var(--blue-lt); }
+  .sec-icon.gv { background: var(--amber-lt); }
+  .sec-icon.it { background: var(--violet-lt); }
+
+  .sec-title { font-family: 'Noto Serif KR', serif; font-size: 19px; font-weight: 700; }
+  .sec-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  .sec-badge {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--text3);
+    background: var(--bg2); border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 20px;
+  }
+
+  /* ===== LEGEND ===== */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .leg-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+    color: var(--text2);
+  }
+
+  .leg-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  /* ===== SUBSECTION ===== */
+  .sub-head {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--cyan);
+    text-transform: uppercase; letter-spacing: 2px;
+    padding: 14px 0 10px;
+    border-bottom: 1px dashed var(--border);
+    margin-bottom: 12px; margin-top: 28px;
+  }
+  .sub-head:first-child { margin-top: 0; }
+
+  /* ===== QUESTION CARD ===== */
+  .q-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .q-card:hover {
+    border-color: var(--blue-mid);
+    box-shadow: 0 2px 8px rgba(29,78,216,0.08);
+  }
+
+  .q-card.answered { border-left: 3px solid var(--green); }
+
+  .q-top {
+    display: flex; gap: 10px; align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .q-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--text3);
+    background: var(--bg2); border: 1px solid var(--border);
+    padding: 2px 7px; border-radius: 4px;
+    flex-shrink: 0; margin-top: 3px;
+  }
+
+  .q-text { font-size: 13px; line-height: 1.65; color: var(--text2); }
+
+  .q-example {
+    font-size: 11px; color: var(--text3);
+    font-style: italic; line-height: 1.55;
+    margin-top: 6px; padding: 7px 10px;
+    background: var(--surface2);
+    border-left: 2px solid var(--border2);
+    border-radius: 0 5px 5px 0;
+  }
+
+  .q-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .q-opt {
+    padding: 5px 13px; border-radius: 20px;
+    font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer; border: 1.5px solid var(--border);
+    background: var(--surface2); color: var(--text3);
+    transition: all 0.14s; white-space: nowrap;
+  }
+
+  .q-opt:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); }
+
+  .q-opt.sel-not      { background:var(--not-bg); border-color:var(--not-bd); color:var(--not-tx); }
+  .q-opt.sel-minimal  { background:var(--min-bg); border-color:var(--min-bd); color:var(--min-tx); }
+  .q-opt.sel-somewhat { background:var(--som-bg); border-color:var(--som-bd); color:var(--som-tx); }
+  .q-opt.sel-mostly   { background:var(--mos-bg); border-color:var(--mos-bd); color:var(--mos-tx); }
+  .q-opt.sel-fully    { background:var(--ful-bg); border-color:var(--ful-bd); color:var(--ful-tx); font-weight:600; }
+  .q-opt.sel-na       { background:var(--na-bg);  border-color:var(--na-bd);  color:var(--na-tx);  }
+
+  /* ===== OVERVIEW ===== */
+  .ov-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .ov-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ov-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px; font-weight: 700;
+    margin-bottom: 18px; color: var(--text);
+  }
+
+  .dbar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+
+  .dbar-lbl { font-size: 11px; color: var(--text2); width: 130px; flex-shrink: 0; }
+
+  .dbar-track {
+    flex: 1; height: 7px;
+    background: var(--bg2); border-radius: 4px; overflow: hidden;
+  }
+
+  .dbar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+
+  .dbar-pct {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--text3);
+    width: 34px; text-align: right; flex-shrink: 0;
+  }
+
+  /* Stage cards */
+  .stage-card {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface2);
+    margin-bottom: 8px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .stage-card:hover { border-color: var(--blue-mid); background: var(--blue-lt); }
+
+  .st-num {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: var(--bg2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; font-weight: 500; flex-shrink: 0;
+    color: var(--text2);
+  }
+  .stage-card.hi .st-num { background: var(--blue); color: white; border-color: var(--blue); }
+
+  .st-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .st-desc { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.5; }
+
+  /* Rating guide */
+  .rating-grid {
+    display: grid; grid-template-columns: repeat(5,1fr); gap: 8px;
+  }
+
+  .rate-item {
+    text-align: center; padding: 14px 8px;
+    border-radius: 10px; border: 1.5px solid;
+  }
+
+  .rate-emoji { font-size: 20px; display: block; margin-bottom: 6px; }
+  .rate-name  { font-size: 11px; font-family: 'IBM Plex Mono', monospace; }
+  .rate-ko    { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+  /* Structure map */
+  .map-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  .map-col {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+  }
+
+  .map-head {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1.5px; margin-bottom: 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+
+  .map-item {
+    font-size: 12px; color: var(--text2);
+    padding: 5px 0; border-bottom: 1px dashed var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .map-item:last-child { border-bottom: none; }
+
+  .map-cnt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--text3);
+  }
+
+  /* ===== SUMMARY TABLE ===== */
+  .sum-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+
+  .sum-table th {
+    padding: 10px 14px; text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text3);
+    background: var(--surface2);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .sum-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2); line-height: 1.4;
+    background: var(--surface);
+  }
+
+  .sum-table tr:hover td { background: var(--blue-lt); }
+
+  .pill {
+    display: inline-flex; align-items: center;
+    padding: 2px 9px; border-radius: 12px;
+    font-size: 10px; font-family: 'IBM Plex Mono', monospace;
+    border: 1px solid; white-space: nowrap;
+  }
+
+  .pill-not  { background:var(--not-bg); border-color:var(--not-bd); color:var(--not-tx); }
+  .pill-min  { background:var(--min-bg); border-color:var(--min-bd); color:var(--min-tx); }
+  .pill-som  { background:var(--som-bg); border-color:var(--som-bd); color:var(--som-tx); }
+  .pill-mos  { background:var(--mos-bg); border-color:var(--mos-bd); color:var(--mos-tx); }
+  .pill-ful  { background:var(--ful-bg); border-color:var(--ful-bd); color:var(--ful-tx); }
+  .pill-na   { background:var(--na-bg);  border-color:var(--na-bd);  color:var(--na-tx);  }
+
+  /* Result panel */
+  .result-box {
+    background: linear-gradient(135deg, var(--blue-lt), var(--cyan-lt));
+    border: 1px solid var(--blue-mid);
+    border-radius: 16px; padding: 28px;
+    margin-top: 36px; display: none;
+  }
+  .result-box.show { display: block; }
+
+  .res-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 20px; font-weight: 700; margin-bottom: 8px;
+  }
+
+  .res-stage {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--blue); color: white;
+    padding: 7px 18px; border-radius: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px; margin: 12px 0 14px;
+  }
+
+  .res-desc { font-size: 13px; color: var(--text2); line-height: 1.7; }
+
+  .export-btn {
+    margin-top: 18px;
+    padding: 10px 24px;
+    background: var(--blue); color: white;
+    border: none; border-radius: 8px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 600; cursor: pointer;
+    transition: background 0.15s;
+    box-shadow: 0 2px 8px rgba(29,78,216,0.25);
+  }
+  .export-btn:hover { background: #1e40af; }
+
+  /* ===== SCROLL ===== */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  @media (max-width: 768px) {
+    .hero { padding: 32px 16px 24px; }
+    .tabs-wrap { padding: 0 16px 60px; }
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+    .ov-grid { grid-template-columns: 1fr; }
+    .map-grid { grid-template-columns: 1fr; }
+    .rating-grid { grid-template-columns: repeat(3,1fr); }
+    .hero-heading { font-size: 26px; }
+    .score-panel { flex-direction: column; gap: 24px; }
+    .score-bars { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="logo">CC<br>MM</div>
+    <div>
+      <div class="header-title">HIMSS CCMM 평가 도구</div>
+      <div class="header-sub">Continuity of Care Maturity Model · SNUBH</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="progress-wrap">
+      <span id="progTxt">0 / 183</span>
+      <div class="prog-track">
+        <div class="prog-fill" id="progFill" style="width:0%"></div>
+      </div>
+      <span id="progPct" style="color:var(--blue);font-weight:500">0%</span>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">HIMSS SOLUTION · Continuity of Care</div>
+  <h1 class="hero-heading">연속 돌봄 성숙도 모델<br><span>인터랙티브 자가진단 평가</span></h1>
+  <p class="hero-desc">
+    CCMM은 0~7단계의 8단계 성숙도 모델로 다양한 돌봄 환경에 걸친 환자 케어의 연속성·조정 능력을 측정합니다.
+    임상·거버넌스·IT 3개 영역, 9개 Focus Area, 총 183개 문항으로 구성됩니다.
+  </p>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card c-blue">
+      <span class="stat-icon">📋</span>
+      <div class="stat-val">183</div>
+      <div class="stat-label">총 평가 문항 수</div>
+    </div>
+    <div class="stat-card c-cyan">
+      <span class="stat-icon">🎯</span>
+      <div class="stat-val">9</div>
+      <div class="stat-label">Focus Area</div>
+    </div>
+    <div class="stat-card c-amber">
+      <span class="stat-icon">📊</span>
+      <div class="stat-val">0–7</div>
+      <div class="stat-label">성숙도 단계 (Stage)</div>
+    </div>
+    <div class="stat-card c-green">
+      <span class="stat-icon">✅</span>
+      <div class="stat-val" id="statPct">0%</div>
+      <div class="stat-label" id="statSub">0개 응답 완료</div>
+    </div>
+  </div>
+
+  <!-- Score panel -->
+  <div class="score-panel">
+    <div class="ring-wrap">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#e2dfd8" stroke-width="10"/>
+        <circle cx="60" cy="60" r="50" fill="none"
+          stroke="url(#rg)" stroke-width="10"
+          stroke-linecap="round"
+          stroke-dasharray="314"
+          stroke-dashoffset="314"
+          id="ringArc"
+          style="transition:stroke-dashoffset 0.7s ease"/>
+        <defs>
+          <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1d4ed8"/>
+            <stop offset="100%" stop-color="#0e7490"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-num" id="ringNum">0</div>
+        <div class="ring-lbl">score</div>
+      </div>
+    </div>
+    <div class="score-bars">
+      <div class="sbar-item">
+        <div class="sbar-lbl">임상 (Clinical)</div>
+        <div class="sbar-track"><div class="sbar-fill" id="sb-cl" style="width:0%;background:linear-gradient(90deg,#1d4ed8,#0e7490)"></div></div>
+        <div class="sbar-val" id="sv-cl">0 / 101</div>
+      </div>
+      <div class="sbar-item">
+        <div class="sbar-lbl">거버넌스 (Gov)</div>
+        <div class="sbar-track"><div class="sbar-fill" id="sb-gv" style="width:0%;background:linear-gradient(90deg,#b45309,#c2410c)"></div></div>
+        <div class="sbar-val" id="sv-gv">0 / 39</div>
+      </div>
+      <div class="sbar-item">
+        <div class="sbar-lbl">정보기술 (IT)</div>
+        <div class="sbar-track"><div class="sbar-fill" id="sb-it" style="width:0%;background:linear-gradient(90deg,#6d28d9,#be185d)"></div></div>
+        <div class="sbar-val" id="sv-it">0 / 43</div>
+      </div>
+      <div class="sbar-item">
+        <div class="sbar-lbl">Care Coordination</div>
+        <div class="sbar-track"><div class="sbar-fill" id="sb-cc" style="width:0%;background:#1d4ed8"></div></div>
+        <div class="sbar-val" id="sv-cc">0 / 18</div>
+      </div>
+      <div class="sbar-item">
+        <div class="sbar-lbl">Patient Engagement</div>
+        <div class="sbar-track"><div class="sbar-fill" id="sb-pe" style="width:0%;background:#0e7490"></div></div>
+        <div class="sbar-val" id="sv-pe">0 / 26</div>
+      </div>
+      <div class="sbar-item">
+        <div class="sbar-lbl">HIE</div>
+        <div class="sbar-track"><div class="sbar-fill" id="sb-hie" style="width:0%;background:#15803d"></div></div>
+        <div class="sbar-val" id="sv-hie">0 / 28</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('overview',this)">📊 개요</button>
+    <button class="tab-btn" onclick="switchTab('clinical-cc',this)">🩺 Care Coordination</button>
+    <button class="tab-btn" onclick="switchTab('clinical-pe',this)">👤 Patient Engagement</button>
+    <button class="tab-btn" onclick="switchTab('clinical-aa',this)">📈 Advanced Analytics</button>
+    <button class="tab-btn" onclick="switchTab('clinical-hie',this)">🔗 HIE</button>
+    <button class="tab-btn" onclick="switchTab('gov-os',this)">🏛 Org Strategy</button>
+    <button class="tab-btn" onclick="switchTab('gov-pl',this)">📋 Policy Initiatives</button>
+    <button class="tab-btn" onclick="switchTab('it-ict',this)">💻 ICT Capabilities</button>
+    <button class="tab-btn" onclick="switchTab('it-std',this)">📐 Standards</button>
+    <button class="tab-btn" onclick="switchTab('it-sec',this)">🔒 Security & Privacy</button>
+    <button class="tab-btn" onclick="switchTab('summary',this)">📝 결과 요약</button>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview" class="tab-panel active">
+    <div class="ov-grid">
+      <div class="ov-card">
+        <div class="ov-title">📊 Focus Area별 응답 현황</div>
+        <div id="ovBars">
+          <div style="text-align:center;color:var(--text3);font-size:13px;padding:20px">응답을 시작하면 여기에 현황이 표시됩니다</div>
+        </div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-title">🎯 CCMM 성숙도 단계 정의</div>
+        <div id="stageDefs"></div>
+      </div>
+    </div>
+
+    <div class="ov-card" style="margin-bottom:20px">
+      <div class="ov-title" style="margin-bottom:18px">🗺 9개 Focus Area 구조 맵</div>
+      <div class="map-grid">
+        <div class="map-col">
+          <div class="map-head" style="color:var(--blue)">🩺 Clinical Stakeholder</div>
+          <div class="map-item"><span>Care Coordination</span><span class="map-cnt">18문항</span></div>
+          <div class="map-item"><span>Patient Engagement</span><span class="map-cnt">26문항</span></div>
+          <div class="map-item"><span>Advanced Analytics</span><span class="map-cnt">27문항</span></div>
+          <div class="map-item"><span>Health Info Exchange</span><span class="map-cnt">28문항</span></div>
+        </div>
+        <div class="map-col">
+          <div class="map-head" style="color:var(--amber)">🏛 Governance Stakeholder</div>
+          <div class="map-item"><span>Organization Strategy</span><span class="map-cnt">20문항</span></div>
+          <div class="map-item"><span>Policy Initiatives</span><span class="map-cnt">19문항</span></div>
+        </div>
+        <div class="map-col">
+          <div class="map-head" style="color:var(--violet)">💻 IT Stakeholder</div>
+          <div class="map-item"><span>ICT System Capabilities</span><span class="map-cnt">23문항</span></div>
+          <div class="map-item"><span>Use of Standards</span><span class="map-cnt">10문항</span></div>
+          <div class="map-item"><span>Security & Privacy</span><span class="map-cnt">12문항</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ov-card">
+      <div class="ov-title" style="margin-bottom:18px">📋 5점 척도 응답 기준</div>
+      <div class="rating-grid">
+        <div class="rate-item" style="background:var(--not-bg);border-color:var(--not-bd)">
+          <span class="rate-emoji">⬜</span>
+          <div class="rate-name" style="color:var(--not-tx)">Not Enabled</div>
+          <div class="rate-ko">미구현</div>
+        </div>
+        <div class="rate-item" style="background:var(--min-bg);border-color:var(--min-bd)">
+          <span class="rate-emoji">🔴</span>
+          <div class="rate-name" style="color:var(--min-tx)">Minimally</div>
+          <div class="rate-ko">최소 구현</div>
+        </div>
+        <div class="rate-item" style="background:var(--som-bg);border-color:var(--som-bd)">
+          <span class="rate-emoji">🟠</span>
+          <div class="rate-name" style="color:var(--som-tx)">Somewhat</div>
+          <div class="rate-ko">절반 수준</div>
+        </div>
+        <div class="rate-item" style="background:var(--mos-bg);border-color:var(--mos-bd)">
+          <span class="rate-emoji">🟡</span>
+          <div class="rate-name" style="color:var(--mos-tx)">Mostly</div>
+          <div class="rate-ko">대부분 구현</div>
+        </div>
+        <div class="rate-item" style="background:var(--ful-bg);border-color:var(--ful-bd)">
+          <span class="rate-emoji">🟢</span>
+          <div class="rate-name" style="color:var(--ful-tx)">Fully Enabled</div>
+          <div class="rate-ko">완전 구현</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESTION PANELS (built on demand) -->
+  <div id="tab-clinical-cc"  class="tab-panel"></div>
+  <div id="tab-clinical-pe"  class="tab-panel"></div>
+  <div id="tab-clinical-aa"  class="tab-panel"></div>
+  <div id="tab-clinical-hie" class="tab-panel"></div>
+  <div id="tab-gov-os"       class="tab-panel"></div>
+  <div id="tab-gov-pl"       class="tab-panel"></div>
+  <div id="tab-it-ict"       class="tab-panel"></div>
+  <div id="tab-it-std"       class="tab-panel"></div>
+  <div id="tab-it-sec"       class="tab-panel"></div>
+
+  <!-- SUMMARY -->
+  <div id="tab-summary" class="tab-panel">
+    <div class="sec-head">
+      <div class="sec-icon cl">📝</div>
+      <div>
+        <div class="sec-title">전체 평가 결과 요약</div>
+        <div class="sec-sub">응답 완료 후 예상 CCMM Stage가 자동 산출됩니다</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto; border-radius:10px; box-shadow:var(--shadow-sm); border:1px solid var(--border)">
+      <table class="sum-table">
+        <thead>
+          <tr>
+            <th>Q#</th><th>Focus Area</th><th>문항 요약</th><th>응답</th>
+          </tr>
+        </thead>
+        <tbody id="sumBody">
+          <tr>
+            <td colspan="4" style="text-align:center;color:var(--text3);padding:40px;background:var(--surface2)">
+              아직 응답한 문항이 없습니다
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="result-box" id="resultBox">
+      <div class="res-title">🎉 평가 완료 — 예상 CCMM Stage</div>
+      <div class="res-stage" id="resStage">Stage 0</div>
+      <div class="res-desc" id="resDesc"></div>
+      <button class="export-btn" onclick="exportCSV()">📥 CSV로 내보내기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const STAGES = [
+  {stage:0,name:"초기 단계",desc:"전자 시스템 도입 이전 또는 극초기. 대부분 종이 기반 프로세스."},
+  {stage:1,name:"기초 디지털화",desc:"기본 EMR 구현. 전자 케어 플랜 도입, 내부 다학제 팀 내 공유 시작."},
+  {stage:2,name:"연결 확장",desc:"케어 세팅 간 전자 케어 플랜 공유. 환자 포털을 통한 기본 정보 접근."},
+  {stage:3,name:"조정 강화",desc:"알림·경고 기반 케어 추적. 전자 의뢰 관리. 기본 HIE 구현."},
+  {stage:4,name:"지역사회 연계",desc:"커뮤니티 EHR/PHR 연계. 예측 분석 초기. 표준 기반 데이터 교환."},
+  {stage:5,name:"통합 케어",desc:"전 케어 세팅 통합 케어 플랜. AI/ML 활용 시작. 실시간 데이터 플로우."},
+  {stage:6,name:"지능형 돌봄",desc:"처방적 분석 활용. 커뮤니티 PHM 프로그램 참여. 바이오메트릭 실시간 연동."},
+  {stage:7,name:"최적화 완성",desc:"모든 케어 세팅 완전 통합·자동화·지속 개선. AI 기반 임상의사결정 전주기 지원."}
+];
+
+const FA = {
+  "clinical-cc":  {label:"Care Coordination",    short:"CC",  color:"#1d4ed8", stake:"Clinical",    icon:"🩺", cls:"cl"},
+  "clinical-pe":  {label:"Patient Engagement",   short:"PE",  color:"#0e7490", stake:"Clinical",    icon:"👤", cls:"cl"},
+  "clinical-aa":  {label:"Advanced Analytics",   short:"AA",  color:"#15803d", stake:"Clinical",    icon:"📈", cls:"cl"},
+  "clinical-hie": {label:"Health Info Exchange", short:"HIE", color:"#6d28d9", stake:"Clinical",    icon:"🔗", cls:"cl"},
+  "gov-os":       {label:"Organization Strategy",short:"OS",  color:"#b45309", stake:"Governance",  icon:"🏛", cls:"gv"},
+  "gov-pl":       {label:"Policy Initiatives",   short:"PL",  color:"#c2410c", stake:"Governance",  icon:"📋", cls:"gv"},
+  "it-ict":       {label:"ICT System Capabilities",short:"ICT",color:"#6d28d9",stake:"IT",          icon:"💻", cls:"it"},
+  "it-std":       {label:"Use of Standards",     short:"STD", color:"#be185d", stake:"IT",          icon:"📐", cls:"it"},
+  "it-sec":       {label:"Security & Privacy",   short:"SEC", color:"#0f766e", stake:"IT",          icon:"🔒", cls:"it"}
+};
+
+const OPT_LABELS = ['Not Enabled','Minimally Enabled','Somewhat Enabled','Mostly Enabled','Fully Enabled'];
+const OPT_KEYS   = ['not','minimal','somewhat','mostly','fully'];
+const OPT_SCORES = {not:0,minimal:1,somewhat:2,mostly:3,fully:4};
+
+const ALL_Q = [
+  // Care Coordination (15-32)
+  {id:15,area:"clinical-cc",sub:"Shared Care Plans and Level of Care Coordination",text:"전자 케어 플랜을 사용한다.",ex:"치료·지원 계획이 종합 평가 후 전자적으로 작성됨.",na:false},
+  {id:16,area:"clinical-cc",sub:"Shared Care Plans and Level of Care Coordination",text:"다학제 팀 내에서 전자 케어 플랜을 공유한다.",ex:"해당 에피소드에 관여하는 모든 의료진이 전자 케어 플랜에 접근 가능.",na:false},
+  {id:17,area:"clinical-cc",sub:"Shared Care Plans and Level of Care Coordination",text:"케어 세팅 내·외부에서 전자 케어 플랜을 공유한다.",ex:"일차의사가 타 클리닉 전문의에게 업데이트된 케어 플랜 공유.",na:false},
+  {id:18,area:"clinical-cc",sub:"Shared Care Plans and Level of Care Coordination",text:"다수 케어 세팅에 걸쳐 케어 플랜 수행 추적을 위해 알림·경고를 사용한다.",ex:"두 전문의 치료 충돌 시 검토 유도, 기한 초과 알림 발생.",na:false},
+  {id:19,area:"clinical-cc",sub:"Shared Care Plans and Level of Care Coordination",text:"환자 개인 목표 정의에 공유 케어 플랜을 활용한다.",ex:"수술 후 재활 목표를 의료진·환자·보호자가 공동 설정.",na:false},
+  {id:20,area:"clinical-cc",sub:"Shared Care Plans and Level of Care Coordination",text:"다중 만성질환에 대한 다수 케어 경로/프로토콜을 포함하는 공유 케어 플랜을 사용한다.",ex:"고혈압·당뇨 관리 경로가 단일 통합 케어 플랜에 통합.",na:false},
+  {id:21,area:"clinical-cc",sub:"Shared Care Plans and Level of Care Coordination",text:"다중 만성질환 환자의 케어 경로 간 충돌·중복·의존성을 탐지할 수 있다.",ex:"고수분 섭취가 우울증·암에 유익하지만 COPD·CHD에 해로운 충돌 인식.",na:false},
+  {id:22,area:"clinical-cc",sub:"Shared Care Plans and Level of Care Coordination",text:"모든 케어 세팅에 걸쳐 케어 전달을 주도·추적한다.",ex:"가정의가 주말 입원환자 목록·수술·퇴원 현황 파악.",na:false},
+  {id:23,area:"clinical-cc",sub:"Shared Care Plans and Level of Care Coordination",text:"다른 의료기관·환자와 협력하여 지역사회 PHM 프로그램을 지원한다.",ex:"일차의료기관이 지역사회 CVD 예방 캠페인에 고혈압 데이터 제공.",na:true},
+  {id:24,area:"clinical-cc",sub:"Specific capabilities supporting care coordination",text:"온라인 근거 기반 임상 가이드라인·프로토콜(비환자 특이적, EMR 미통합)을 사용한다.",ex:"당뇨 관리 최신 가이드라인 데이터베이스 전자 접근.",na:false},
+  {id:25,area:"clinical-cc",sub:"Specific capabilities supporting care coordination",text:"다학제 팀 내에서 전자 환자 기록에 온라인 접근이 가능하다.",ex:"의료·사회복지 전문가가 치료 전 EMR 접근.",na:true},
+  {id:26,area:"clinical-cc",sub:"Specific capabilities supporting care coordination",text:"케어 세팅 내·외부에서 전자 환자 기록에 온라인 접근이 가능하다.",ex:"입원 시 일차의료 기록 검토, 재활센터의 전자 퇴원 요약 확인.",na:false},
+  {id:27,area:"clinical-cc",sub:"Specific capabilities supporting care coordination",text:"다른 케어 세팅 기관 간 전자 의뢰를 관리할 수 있다.",ex:"병원→재활센터, GP→신경과 의뢰 시 의무기록·케어 지시 접근 제공.",na:false},
+  {id:28,area:"clinical-cc",sub:"Specific capabilities supporting care coordination",text:"커뮤니티 공유 기록 활용 케어 세팅 간 CDS를 트리거하는 전자 임상 오더를 사용한다.",ex:"퇴원 후 CDSS가 일차의료기관에 입원 요약·케어 플랜 변경사항 알림.",na:true},
+  {id:29,area:"clinical-cc",sub:"Specific capabilities supporting care coordination",text:"케어 플랜에 통합된 원격의료 서비스를 일상적으로 사용한다.",ex:"만성질환 원격 모니터링, 추적 방문, 가상 상담.",na:false},
+  {id:30,area:"clinical-cc",sub:"Specific capabilities supporting care coordination",text:"환자 개별화된 근거 기반 통합 케어 플랜을 사용한다.",ex:"다중 질환·다약제·신체/정신 장애·사회적 결정 요인 반영.",na:false},
+  {id:31,area:"clinical-cc",sub:"Specific capabilities supporting care coordination",text:"CDS를 활용한 동적 워크플로를 지원하는 문서화 결과를 사용한다.",ex:"HbA1c 상승 당뇨환자에 약물 검토 권고; 유전자 데이터 기반 인슐린 조정.",na:true},
+  {id:32,area:"clinical-cc",sub:"Specific capabilities supporting care coordination",text:"다양한 케어 세팅 의료팀이 접근 가능한 통합 알림이 포함된 개인화 케어 플랜을 사용한다.",ex:"활동·이벤트·미완료 프로토콜·기한 초과 케어 플랜 작업 알림 트리거.",na:false},
+
+  // Patient Engagement (33-58)
+  {id:33,area:"clinical-pe",sub:"Citizen/Patient empowerment by access to medical information",text:"시민·환자에게 일반 건강 정보(비개인화)에 대한 온라인 접근을 제공한다.",ex:"질병 예방 정보, 온라인 튜토리얼, 위험도 평가.",na:false},
+  {id:34,area:"clinical-pe",sub:"Citizen/Patient empowerment by access to medical information",text:"시민·환자가 인구통계, 주요 진단, 만성질환, 알레르기 등을 온라인으로 확인할 수 있다.",ex:"환자 전용 온라인 포털에서 핵심 케어 정보 접근.",na:false},
+  {id:35,area:"clinical-pe",sub:"Citizen/Patient empowerment by access to medical information",text:"시민·환자가 임상 정보(검사결과·영상·투약·요약)에 온라인 접근할 수 있다.",ex:"검사결과·영상·투약·의료 요약 온라인 접근.",na:false},
+  {id:36,area:"clinical-pe",sub:"Citizen/Patient empowerment by access to medical information",text:"시민·환자가 의무기록 접근 권한을 관리할 수 있다.",ex:"날짜·시간·질환·의사별 접근 제어 (부인과→가능, 피부과→불가).",na:false},
+  {id:37,area:"clinical-pe",sub:"Citizen/Patient empowerment by access to medical information",text:"시민·환자가 케어 플랜 활동에 대한 알림·리마인더를 받을 수 있다.",ex:"예약·투약·식사·수분·예방접종·검진 리마인더.",na:false},
+  {id:38,area:"clinical-pe",sub:"Citizen/Patient empowerment by access to medical information",text:"시민·환자가 개인 건강 목표·자가 모니터링 활동에 온라인 접근할 수 있다.",ex:"혈당·식이 자가 모니터링, 신체 활동, 치료 순응도 모니터링.",na:false},
+  {id:39,area:"clinical-pe",sub:"Citizen/Patient empowerment by access to medical information",text:"시민·환자가 온라인 접근 가능한 커뮤니티 공용 PHR에 기여한다.",ex:"의료 이력·진단·중재·면역접종·혈액형·보험 정보 제공.",na:false},
+  {id:40,area:"clinical-pe",sub:"Citizen/Patient empowerment by access to medical information",text:"환자가 커뮤니티 공용 PHR에 대한 접근 권한을 관리할 수 있다.",ex:"날짜·시간·질환·의사별 PHR 접근 제어.",na:false},
+  {id:41,area:"clinical-pe",sub:"Citizen/Patient empowerment by access to medical information",text:"시민·환자가 커뮤니티 PHR 접근 기록을 감사(audit)할 수 있다.",ex:"PHR 접근 시 이메일/문자 알림, 접근 이력 감사 보고서.",na:false},
+  {id:42,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"임상의–환자 간 임상 소통을 위한 보안 메시징을 사용한다.",ex:"환자가 4일마다 수술 부위 사진을 전송하여 상처 치유 확인.",na:false},
+  {id:43,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"시민·환자가 예약·청구·대기 목록 등 행정 기능에 온라인 접근할 수 있다.",ex:"예약 일정, 청구서 조회·납부, 보험 현황, 대기 상태, 개인정보 업데이트.",na:true},
+  {id:44,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"질환별 원격 모니터링 기기를 포함한 환자 자가 관리 도구 활용을 지원·모니터링한다.",ex:"혈압·체중·혈당 등 재택/모바일 기기에서 임상 측정값 전송.",na:true},
+  {id:45,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"환자가 온라인으로 개인 건강 데이터(PROMs 등)를 업데이트할 수 있다.",ex:"환자 보고 결과 지표(PROMs).",na:true},
+  {id:46,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"환자가 가족 구성원에게 기록 업데이트 권한을 온라인으로 부여할 수 있다.",ex:"가족 대리 접근 권한 관리.",na:true},
+  {id:47,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"환자 선택 자가 관리 도구 활용을 허가·지원한다.",ex:"생활 습관·웰니스 관리 도구, 운동·소비 추적.",na:true},
+  {id:48,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"자동 알림·경보를 통해 환자가 건강 유지 리마인더를 받을 수 있다.",ex:"예방접종·정기 검진·치료 예약·투약 알림.",na:true},
+  {id:49,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"환자가 치료 순응도를 추적하고 진행 상황을 문서화할 수 있다.",ex:"권고 행동 수행 여부 문서화, 비순응 사유 입력.",na:true},
+  {id:50,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"고위험/만성질환 환자가 개인화·자동 조정된 목표를 받는 프로그램에 등록될 수 있다.",ex:"불안정 당뇨 환자에게 e-상담·원격 모니터링·자동 리콜 제공.",na:true},
+  {id:51,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"시민이 커뮤니티 건강 증진 프로그램에 등록할 수 있다.",ex:"전자 등록, 케어팀 식별, 모니터링·측정 방법 포함.",na:true},
+  {id:52,area:"clinical-pe",sub:"Citizen/Patient engagement in care delivery and health maintenance",text:"웨어러블·이식형·복용형 기기에서 환자별 바이오메트릭 데이터를 실시간으로 수집한다.",ex:"웨어러블 모니터, 이식형 센서, 복용형 알약 24/7 데이터.",na:true},
+  {id:53,area:"clinical-pe",sub:"Level of integration between EMR/EPR, community EHR and PHR",text:"커뮤니티 PHR에 기본 환자 데이터(인구통계·알레르기·주요 진단·만성질환)를 전송할 수 있다.",ex:"",na:false},
+  {id:54,area:"clinical-pe",sub:"Level of integration between EMR/EPR, community EHR and PHR",text:"지역/국가 EHR에 기본 환자 데이터를 전송할 수 있다.",ex:"",na:false},
+  {id:55,area:"clinical-pe",sub:"Level of integration between EMR/EPR, community EHR and PHR",text:"커뮤니티 PHR에 임상 정보(검사결과·영상·투약·요약)를 전송할 수 있다.",ex:"",na:true},
+  {id:56,area:"clinical-pe",sub:"Level of integration between EMR/EPR, community EHR and PHR",text:"지역/국가 EHR에 임상 정보를 전송할 수 있다.",ex:"",na:true},
+  {id:57,area:"clinical-pe",sub:"Level of integration between EMR/EPR, community EHR and PHR",text:"커뮤니티 PHR을 통해 환자별 알림·경고를 활성화할 수 있다.",ex:"비정상 검사값이 PHR 내 환자에게 알림 트리거.",na:true},
+  {id:58,area:"clinical-pe",sub:"Level of integration between EMR/EPR, community EHR and PHR",text:"EMR이 커뮤니티 PHR로부터 데이터를 수신·통합할 수 있다.",ex:"환자가 PHR에 체중 입력 후 GP EMR에 직접 공유.",na:false},
+
+  // Advanced Analytics (59-85)
+  {id:59,area:"clinical-aa",sub:"Analytics Strategy",text:"공식 정보 거버넌스 프로그램을 구현하였다.",ex:"거버넌스 위원회가 데이터 품질·컴플라이언스·리스크·프라이버시·보안 관리.",na:false},
+  {id:60,area:"clinical-aa",sub:"Analytics Strategy",text:"케어 세팅 전반에 걸쳐 임상·재정/운영 데이터를 분석·활용하는 분석 전략을 도입하였다.",ex:"당뇨 환자 GP·병원·사회복지 간 통합 케어에서 건강 모니터링·자원 활용 분석.",na:false},
+  {id:61,area:"clinical-aa",sub:"Analytics Strategy",text:"커뮤니티 차원의 정보 거버넌스 프로그램에 적극 참여한다.",ex:"공동 투자·교육·정책 개발, 상호 데이터 공유 협약.",na:false},
+  {id:62,area:"clinical-aa",sub:"Analytics Strategy",text:"임상·재정/운영 데이터를 위한 커뮤니티 차원의 분석 전략에 적극 참여한다.",ex:"협력적 계획·전략적 투자를 통한 자원 활용 최적화·의료 비용 절감.",na:false},
+  {id:63,area:"clinical-aa",sub:"Analytics Infrastructure",text:"1차 원본 시스템 애플리케이션에 분석을 적용할 수 있다.",ex:"환자 유형·시술·결과·진단·환자당 비용 분석.",na:false},
+  {id:64,area:"clinical-aa",sub:"Analytics Infrastructure",text:"외부 데이터를 캡처·저장·정규화·전송·수집하는 분석 인프라가 있다.",ex:"의료기관 간·국가 레지스트리 간 양방향 HIE.",na:false},
+  {id:65,area:"clinical-aa",sub:"Analytics Infrastructure",text:"의무기록에서 종단적 환자 정보를 검색·조회하는 분석 인프라가 있다.",ex:"단일 기록 또는 코호트에서 추세 분석·결과 추적.",na:false},
+  {id:66,area:"clinical-aa",sub:"Analytics Infrastructure",text:"모든 케어 제공자에 걸쳐 케이스 데이터 갭을 자동 식별·보고하는 분석 능력이 있다.",ex:"불완전 환자 기록 자동 알림·갭 분석·보고.",na:true},
+  {id:67,area:"clinical-aa",sub:"Analytics Infrastructure",text:"다양한 외부 데이터를 실시간으로 추출·분석·표시하여 타 기관과 성과 벤치마킹을 수행한다.",ex:"지역 데이터와 환자 회복률 비교, 비용 효율성·대기 시간 비교.",na:false},
+  {id:68,area:"clinical-aa",sub:"Analytics Driving Clinical Activities",text:"기관 간 비교를 위해 구조화된 형식으로 임상 데이터를 전자 송수신할 수 있다.",ex:"진단 검사 수·처방 항생제·면역접종 현황 비교.",na:false},
+  {id:69,area:"clinical-aa",sub:"Analytics Driving Clinical Activities",text:"원본 시스템에서 직접 구조화된 형식으로 임상 데이터를 시스템 간 송수신할 수 있다.",ex:"시스템 간 데이터 교환 기반의 진단 검사·처방·면역접종 비교.",na:false},
+  {id:70,area:"clinical-aa",sub:"Analytics Driving Clinical Activities",text:"상호운용 시스템을 통해 익명화 임상 데이터를 타 기관과 비교하고 목표 준수 알림을 받는다.",ex:"예방접종률 목표 미달·대기 시간 초과·검진 순응도 미충족 시 알림.",na:false},
+  {id:71,area:"clinical-aa",sub:"Analytics Driving Clinical Activities",text:"임상 위험 감소를 위해 시민·환자를 자동으로 식별하고 적시에 연락할 수 있다.",ex:"전립선암 검진 미참석 65세 남성, 처방 미수령 환자, 면역접종 미달 시민 알림.",na:true},
+  {id:72,area:"clinical-aa",sub:"Analytics Driving Clinical Activities",text:"PHM 데이터·알고리즘을 기반으로 환자를 위험 분류 또는 레지스트리에 자동 배정한다.",ex:"자동 환자 위험 수준 배정, 레지스트리 등록 알림, 진단 기반 질환군 분류.",na:false},
+  {id:73,area:"clinical-aa",sub:"Analytics Driving Clinical Activities",text:"임상/환경 지표에 기반한 환자·인구 수준의 예측 알림을 개발·배포하였다.",ex:"조기 패혈증 탐지, 입원율 예측, 만성질환 악화 경고, 투약 순응도 예측.",na:false},
+  {id:74,area:"clinical-aa",sub:"Analytics Driving Clinical Activities",text:"임상 이벤트를 예측하고 적절한 행동을 권고하는 처방 분석 도구를 개발·배포하였다.",ex:"독감 유행 예측→백신 재고 증가 권고, 비만 증가 예측→예방 중재 처방.",na:false},
+  {id:75,area:"clinical-aa",sub:"Analytics Driving Clinical Activities",text:"다수 케어 세팅 데이터를 활용하여 임상·경제적 이벤트를 예측하고 행동을 권고하는 처방 분석 도구를 보유한다.",ex:"환자 흐름 관리, 최적 치료 경로 권고, 경제적 효율성을 위한 최적 자원 배분.",na:false},
+  {id:76,area:"clinical-aa",sub:"Analytics Driving Benefit Realization",text:"행정·재정·임상 데이터를 결합하여 현재 상태를 파악하는 관리 보고서를 생성할 수 있다.",ex:"의뢰 패턴, 환자 구성, 재입원율, 품질 지표.",na:false},
+  {id:77,area:"clinical-aa",sub:"Analytics Driving Benefit Realization",text:"사업 계획·예측·모델링 및 미래 이상 이벤트 예방을 위해 임상·재정 데이터를 활용한다.",ex:"독감 시즌 환자 유입 예측→인력·백신 예산 편성.",na:false},
+  {id:78,area:"clinical-aa",sub:"Analytics Driving Benefit Realization",text:"외부 파트너에게 임상·재정 데이터를 자동 제출하고 피드백을 활용한다.",ex:"근거 기반 치료 경로 대비 국가 벤치마크, 이상 LOS·원내 감염률 평가.",na:false},
+  {id:79,area:"clinical-aa",sub:"Analytics Driving Benefit Realization",text:"환자 만족도·진료 질·데이터 공유·환자 참여·재정 효율성 모든 영역에서 실현된 효과를 입증할 수 있다.",ex:"환자 포털 접근→만족도·참여도 향상·운영 비용 절감.",na:false},
+  {id:80,area:"clinical-aa",sub:"Other Capabilities",text:"임상 시험 지원(관련 환자 코호트 식별, 환자 선발 및 모니터링)에 분석을 사용한다.",ex:"특정 유전자 마커 환자 발굴 데이터 마이닝.",na:true},
+  {id:81,area:"clinical-aa",sub:"Other Capabilities",text:"알림·경보를 사용하고 질병 예방·건강 위협 감소를 위한 커뮤니티 분석 프로그램 참여를 입증한다.",ex:"질병 발생 알림, 천식 등 만성질환 건강 위험 알림.",na:false},
+  {id:82,area:"clinical-aa",sub:"Other Capabilities",text:"의료기기 리콜 활동 지원 및 환자 참여를 위해 분석을 사용한다.",ex:"리콜 이식 기기 일련번호와 환자 DB 교차 분석.",na:true},
+  {id:83,area:"clinical-aa",sub:"Other Capabilities",text:"임상 의사결정 지원 알고리즘의 효과성·활용도·최신성 보장을 위해 분석/모니터링 도구를 사용한다.",ex:"CDS 성능 모니터링, CDS 활용 빈도 추적, 알고리즘 업데이트 확인.",na:true},
+  {id:84,area:"clinical-aa",sub:"Other Capabilities",text:"치료 최적화를 위한 커뮤니티 차원의 개인화 의학 프로그램에 기여한다.",ex:"가장 효과적인 치료 프로토콜 식별 중앙 분석 플랫폼.",na:true},
+  {id:85,area:"clinical-aa",sub:"Other Capabilities",text:"케어 세팅 전반에서 예방/치료 프로그램과 임상 결과 간 관계를 분석하기 위해 AI 도구를 사용한다.",ex:"최적 투약 기간 AI 권고, 건강 캠페인 분석으로 예방 전략 정제.",na:false},
+
+  // HIE (86-113)
+  {id:86,area:"clinical-hie",sub:"Level of HIE sophistication",text:"케어 세팅 전반의 타 기관과 데이터(PDF, Word, 비구조적 텍스트)를 전자 교환할 수 있다.",ex:"일차의료기관이 전문의 의뢰 시 투약·문제·검사결과 포함 전자 케어 요약 전송.",na:false},
+  {id:87,area:"clinical-hie",sub:"Level of HIE sophistication",text:"케어 세팅 전반의 타 기관과 보안 전자 메시징을 사용하여 데이터를 교환한다.",ex:"보안 네트워크, 종단 암호화 이메일, 비밀번호 보호 메시지.",na:false},
+  {id:88,area:"clinical-hie",sub:"Level of HIE sophistication",text:"케어 세팅 전반의 타 기관과 환자 관련 정보를 표준화·보안된 방식으로 시스템 간 공유할 수 있다.",ex:"원격의료 상담, EHR 통합.",na:false},
+  {id:89,area:"clinical-hie",sub:"Level of HIE sophistication",text:"환자 관련 정보 조회를 위한 네트워크 포털 또는 레지스트리에 보안 접근이 가능하다.",ex:"국가 면역접종 레지스트리 접근, 응급의학과 의사의 환자 투약·영상 조회.",na:false},
+  {id:90,area:"clinical-hie",sub:"Level of HIE sophistication",text:"국제적으로 인정된 상호운용성 표준을 준수하고 시스템 간 양방향 데이터 플로우를 지원한다.",ex:"HL7, FHIR, ICD-10, SNOMED CT.",na:false},
+  {id:91,area:"clinical-hie",sub:"Level of HIE sophistication",text:"구조화·정규화된 데이터 교환을 지원하는 표준 의료 코딩 솔루션을 사용한다.",ex:"ICD-10 당뇨 코드, SNOMED CT 수술 코드, LOINC CBC 결과 보고.",na:true},
+  {id:92,area:"clinical-hie",sub:"Level of HIE sophistication",text:"실시간 이벤트 기반 알림·경보를 송수신할 수 있다.",ex:"비정상 검사 결과 알림, 투약 순응도 리마인더, 약국 미수령 알림.",na:false},
+  {id:93,area:"clinical-hie",sub:"Level of HIE sophistication",text:"의료기관 EMR, 지역/국가 EHR, 커뮤니티 PHR 간 다방향 데이터 플로우에 기여할 수 있다.",ex:"슬관절 치환술 후 회복 기록이 EMR·EHR·PHR 간 동기화.",na:false},
+  {id:94,area:"clinical-hie",sub:"Level of HIE sophistication",text:"EMR이 지역/국가 EHR 및 커뮤니티 PHR과 통합되어 준실시간으로 데이터를 교환할 수 있다.",ex:"전자 등록·모니터링·임상 가이드라인 준수·환자 교육·케어팀 간 케어 조정.",na:false},
+  {id:95,area:"clinical-hie",sub:"Clinical Use Cases",text:"같은 케어 세팅 내 타 기관과 임상 오더를 전자 교환할 수 있다.",ex:"응급의학과 CT 오더, 사회복지사 재택 평가 오더.",na:false},
+  {id:96,area:"clinical-hie",sub:"Clinical Use Cases",text:"같은 케어 세팅 내 타 기관과 임상 결과를 전자 교환할 수 있다.",ex:"이메일로 검사·영상·진단 전송, 공유 플랫폼 파일 업로드.",na:false},
+  {id:97,area:"clinical-hie",sub:"Clinical Use Cases",text:"같은 케어 세팅 내 타 기관과 임상 문서를 전자 교환할 수 있다.",ex:"퇴원 서신·의료 요약 이메일 전송, 공유 플랫폼 업로드.",na:false},
+  {id:98,area:"clinical-hie",sub:"Clinical Use Cases",text:"같은 케어 세팅 내 타 기관과 임상 영상(사진·MRI·CT)을 전자 교환할 수 있다.",ex:"피부 자극·점 사진을 피부과에 전송, 상처 사진을 사회복지 서비스와 공유.",na:true},
+  {id:99,area:"clinical-hie",sub:"Clinical Use Cases",text:"같은 케어 세팅 내 타 기관과 시스템 간 임상 오더를 교환한다.",ex:"수동 개입 없이 검사·영상·처방을 시스템 간 원활하게 공유.",na:true},
+  {id:100,area:"clinical-hie",sub:"Clinical Use Cases",text:"같은 케어 세팅 내 타 기관과 시스템 간 임상 결과를 교환한다.",ex:"수동 개입 없이 검사·영상·진단을 시스템 간 원활하게 공유.",na:true},
+  {id:101,area:"clinical-hie",sub:"Clinical Use Cases",text:"같은 케어 세팅 내 타 기관과 시스템 간 임상 문서를 교환한다.",ex:"수동 개입 없이 퇴원 서신·의료 요약을 시스템 간 원활하게 공유.",na:false},
+  {id:102,area:"clinical-hie",sub:"Clinical Use Cases",text:"외부 의료 전문가에게 임상 영상(사진·MRI·CT)을 온라인으로 제공할 수 있다.",ex:"피부과 클라우드 플랫폼 업로드, 병원 A에서 병원 B로 CT 공유.",na:true},
+  {id:103,area:"clinical-hie",sub:"Clinical Use Cases",text:"내·외부 의사/케어 제공자/코디네이터가 환자 기록에 대한 임상·행정 조회를 실행할 수 있다.",ex:"GP가 심장전문의에게 환자 기록 임시 접근 허용.",na:false},
+  {id:104,area:"clinical-hie",sub:"Clinical Use Cases",text:"투약 조정 수행을 위해 커뮤니티 환자 기록과 전자 처방을 교환한다.",ex:"새 환자의 커뮤니티 투약 기록 검토 후 임상 진료 전 투약 조정.",na:true},
+  {id:105,area:"clinical-hie",sub:"Clinical Use Cases",text:"문제 조정 수행을 위해 커뮤니티 환자 기록과 임상 문제 목록을 교환한다.",ex:"일차의료기관이 문제 목록 업데이트 후 커뮤니티 기록과 동기화.",na:true},
+  {id:106,area:"clinical-hie",sub:"Clinical Use Cases",text:"원격 환자 모니터링을 위한 원격의료 도구를 사용한다.",ex:"전자 체중계, 혈당측정기, 화상 회의, e-상담.",na:true},
+  {id:107,area:"clinical-hie",sub:"Clinical Use Cases",text:"케어 세팅 간 공유 케어 플랜 내에서 전자 오더 세트를 활성화·지원한다.",ex:"당뇨 환자의 투약·혈당 모니터링·식이 권고를 포함한 전자 오더 세트.",na:true},
+  {id:108,area:"clinical-hie",sub:"Clinical Use Cases",text:"의료기관의 투약 오더가 커뮤니티 환자 기록 활용 CDS 도구와 상호작용한다.",ex:"고혈압 환자 신규 투약 처방 시 CDS가 혈액 희석제 상호작용 알림.",na:true},
+  {id:109,area:"clinical-hie",sub:"Clinical Use Cases",text:"의료기관의 검사·영상 오더가 커뮤니티 환자 기록 활용 CDS 도구와 상호작용한다.",ex:"유방촬영술 오더 시 CDS가 EHR의 연령·가족력·이전 검진 결과 확인.",na:true},
+  {id:110,area:"clinical-hie",sub:"Clinical Use Cases",text:"이후 유해한 것으로 밝혀진 치료·약물·제품을 받은 환자를 자동으로 식별할 수 있다.",ex:"약물 리콜, 유방 임플란트 리콜, 인공 관절 리콜.",na:true},
+  {id:111,area:"clinical-hie",sub:"HIE between care provider and health authorities",text:"지역/국가 보건 당국에 면역접종·공중보건·종양·감염 감시 데이터 세트를 전자 자동 제출할 수 있다.",ex:"자동화 시스템으로 면역접종 기록을 국가 데이터베이스 전송.",na:false},
+  {id:112,area:"clinical-hie",sub:"HIE between care provider and health authorities",text:"인구 건강 보고(신고 질환)를 위해 지역/국가 보건 당국 레지스트리와 환자 데이터를 전자 교환할 수 있다.",ex:"신고 질환 자동 익명화 후 역학 추적 레지스트리 보고.",na:false},
+  {id:113,area:"clinical-hie",sub:"HIE between care provider and health authorities",text:"현행 지역/국가 보건 당국 요건에 따라 완전한 임상·운영·재정 데이터 세트를 전자 자동 제출할 수 있다.",ex:"국가 데이터베이스에 최신 임상 데이터 표준 준수 제출.",na:false},
+
+  // Org Strategy (114-133)
+  {id:114,area:"gov-os",sub:"ICT System-related",text:"현행·문서화·활성화된 ICT 전략을 보유하고 있다.",ex:"시스템 인프라·통합·소통, 구현 일정, 직원 교육 프로그램, 데이터 보안 조치 포함.",na:false},
+  {id:115,area:"gov-os",sub:"ICT System-related",text:"연간 테스트를 포함한 현행·문서화·활성화된 업무연속성 계획을 보유하고 있다.",ex:"UPS 전용 워크스테이션과 읽기 전용 접근 가능한 핵심 EMR 데이터.",na:false},
+  {id:116,area:"gov-os",sub:"ICT System-related",text:"현행·문서화·검토·업데이트된 재해 복구 계획(데이터센터·네트워크·단말기 포함)을 보유하고 있다.",ex:"오프사이트/클라우드 백업 포함 데이터센터 복구 프로토콜.",na:false},
+  {id:117,area:"gov-os",sub:"ICT System-related",text:"현행·문서화·검토·업데이트된 커뮤니티 차원의 재해 복구 프로그램에 참여하고 있다.",ex:"장애 발생 시 여러 의료 시설 간 의료 자원·인력 공유·조정 계획.",na:false},
+  {id:118,area:"gov-os",sub:"HIE & Interoperability-related",text:"케어 세팅 간 데이터 공유를 지원하기 위해 환자·의사·시설 색인을 관리하는 전략을 보유하고 있다.",ex:"MPI(Master Patient Index), 국가 환자 식별자, 의사 및 시설 색인.",na:false},
+  {id:119,area:"gov-os",sub:"HIE & Interoperability-related",text:"모든 API(내부·제3자)가 문서화되고 소유권이 있는지 보장하는 프로세스를 보유하고 있다.",ex:"데이터 형식·인증 요건·오류 코드 문서화; API 성능·보안 표준 충족 보장.",na:false},
+  {id:120,area:"gov-os",sub:"HIE & Interoperability-related",text:"타 기관/케어 세팅의 데이터를 환자 EMR에 효과적으로 통합하는 전략을 보유하고 있다.",ex:"공통 용어·분류 체계, 공유 구조화 템플릿, 스캔·수기 문서 최소화.",na:false},
+  {id:121,area:"gov-os",sub:"HIE & Interoperability-related",text:"환자 감시·상담·치료를 위한 원격의료 활용의 현행·문서화·활성화된 전략을 보유하고 있다.",ex:"원격 환자 모니터링 또는 가상 상담.",na:false},
+  {id:122,area:"gov-os",sub:"HIE & Interoperability-related",text:"만성질환 관리 프로그램에 환자·가족을 포함하는 전략을 보유하고 있다.",ex:"가족 구성원 교육을 통한 케어 플랜 연속성·효과성 향상.",na:true},
+  {id:123,area:"gov-os",sub:"HIE & Interoperability-related",text:"커뮤니티 차원의 만성질환 관리 프로그램 참여 전략을 보유하고 있다.",ex:"COPD, 당뇨, 뇌전증 — 다학제 팀 및 협력 필요.",na:true},
+  {id:124,area:"gov-os",sub:"Data processing and Analytics-related",text:"데이터 품질 해결을 위한 지속적 임무와 조치를 포함하는 정보 거버넌스 전략을 보유하고 있다.",ex:"데이터 감사, 오류/불일치 식별·수정 프로세스, 데이터 암호화.",na:false},
+  {id:125,area:"gov-os",sub:"Data processing and Analytics-related",text:"올바른 의미 맥락에서 타 기관과 데이터를 공유하기 위한 데이터 정규화·표준화 전략을 보유하고 있다.",ex:"FHIR 표준 공유 EHR에서 검사 데이터를 LOINC로 정규화.",na:false},
+  {id:126,area:"gov-os",sub:"Data processing and Analytics-related",text:"공유 정보가 케어 세팅 전반에 걸쳐 일관된 방식으로 CDS를 트리거할 수 있도록 보장하는 전략을 보유하고 있다.",ex:"케어 세팅 전반에 동일한 비정상 검사값 세트가 동일한 유형의 알림 트리거.",na:false},
+  {id:127,area:"gov-os",sub:"Data processing and Analytics-related",text:"커뮤니티 공용 기록 및 기타 데이터 소스의 정보에 예측 분석 도구를 활용하는 전략을 보유하고 있다.",ex:"당뇨·COPD 환자의 2차 의료 활동을 1차 서비스로 전환 시 재정·품질 영향 이해.",na:false},
+  {id:128,area:"gov-os",sub:"Organizational development & performance",text:"전자 시스템 활용을 위한 최종 사용자 교육 및 참여 추적 전략을 보유하고 있다.",ex:"신규 직원 전자 시스템 교육, 기존 직원 정기 교육 모듈.",na:false},
+  {id:129,area:"gov-os",sub:"Organizational development & performance",text:"인정·합의된 방법론을 기반으로 조직 변화 관리 전략을 보유하고 있다.",ex:"다학제 팀이 ICT 및 임상 업무 방식의 변화를 평가·준비·지원.",na:false},
+  {id:130,area:"gov-os",sub:"Organizational development & performance",text:"커뮤니티 환자 기록 개발·유지를 위해 외부 이해관계자와 협력하는 전략을 보유하고 있다.",ex:"관련 이해관계자 정기 회의, 공식 승인 프로세스, 실행 계획 대비 진행 상황 유지.",na:false},
+  {id:131,area:"gov-os",sub:"Organizational development & performance",text:"커뮤니티 환자 기록 구현 및 다수 케어 세팅 데이터 교환 후 임상·재정 효과 측정·실현 전략을 보유하고 있다.",ex:"초기 기준선/벤치마킹 프로세스, 만성질환 관리·응급 케어·예방 케어 포함 효과 실현 레지스터.",na:false},
+  {id:132,area:"gov-os",sub:"Organizational development & performance",text:"커뮤니티 차원의 디지털 혁신·전환 프로그램 참여 전략을 보유하고 있다.",ex:"원격의료 플랫폼·공유 기록·모바일 앱·AI/ML 등 신기술 투자.",na:false},
+  {id:133,area:"gov-os",sub:"Organizational development & performance",text:"케어 연속성 활동의 성과 지표·위험 평가·사건 보고서를 커뮤니티 차원에서 공유하고 개선 계획을 지속적으로 최적화하는 전략을 보유하고 있다.",ex:"",na:false},
+
+  // Policy (134-152)
+  {id:134,area:"gov-pl",sub:"General position / objective of policy level",text:"케어 세팅 전반의 행정 프로세스 개선을 위해 지역/지방 정책을 활용한다.",ex:"데이터 공유 협약 및 케어 세팅 간 표준화된 행정 절차.",na:false},
+  {id:135,area:"gov-pl",sub:"General position / objective of policy level",text:"케어 세팅 전반의 행정 프로세스 개선을 위해 국가 정책을 활용한다.",ex:"국가 데이터 공유 협약·표준화 행정 절차로 GP에게 전자 퇴원 서신 전송.",na:false},
+  {id:136,area:"gov-pl",sub:"General position / objective of policy level",text:"케어 세팅 전반의 행정 프로세스 개선을 위한 지역/지방 정책을 설계·공유·구현한다.",ex:"지역 협약으로 GP 역할 정의 (비계획 입원 감소).",na:true},
+  {id:137,area:"gov-pl",sub:"General position / objective of policy level",text:"케어 세팅 전반의 환자 흐름 및 임상 프로세스 개선·측정을 위해 정책을 활용한다.",ex:"다학제 공동 평가 프로세스에서 의사가 통상적 케어 세팅 외에서 진료.",na:false},
+  {id:138,area:"gov-pl",sub:"General position / objective of policy level",text:"환자 참여 및 시민 역량 강화를 기술하는 정책을 보유하고 있다.",ex:"환자 중심 케어·정보에 입각한 의사결정 강조, 건강 교육 프로그램.",na:false},
+  {id:139,area:"gov-pl",sub:"General position / objective of policy level",text:"커뮤니티 차원의 정책 이니셔티브 결과로 다수의 임상/재정 성과를 측정·모니터링할 수 있다.",ex:"예방 검진 수, 낙상·욕창 발생, 병원 이송, 재입원율, 환자 만족도.",na:false},
+  {id:140,area:"gov-pl",sub:"Specific policy level initiatives",text:"EMR 도입 수준 향상을 위한 e-헬스케어 소프트웨어 사용을 장려하는 정책 이니셔티브를 활용한다.",ex:"특정 날짜까지 EMR 시스템 또는 공통 상호운용성 표준 사용 요건.",na:false},
+  {id:141,area:"gov-pl",sub:"Specific policy level initiatives",text:"조직 간 정보 공유를 위해 전용 컴퓨터 네트워크 사용을 장려한다.",ex:"조직들이 단일 네트워크 사용에 합의.",na:false},
+  {id:142,area:"gov-pl",sub:"Specific policy level initiatives",text:"공통 인프라 비용 공유를 보장하는 정책을 보유하고 있다.",ex:"EHR·원격의료 플랫폼 공유 서비스 계약, 의료기관 규모·환자 볼륨 기반 비용 배분.",na:false},
+  {id:143,area:"gov-pl",sub:"Specific policy level initiatives",text:"국가 이니셔티브·품질 표준·법적 요건에 대한 컴플라이언스를 모니터링·관리하는 프로세스를 보유하고 있다.",ex:"기관 간 데이터 보호, 환자 기밀 유지 및 기록 접근, 전자 메시징.",na:false},
+  {id:144,area:"gov-pl",sub:"Specific policy level initiatives",text:"국가 보안·개인정보 정책의 지역 구현이 케어 세팅 간 케어 연속성을 지원하고 촉진함을 보장한다.",ex:"데이터 공유 프로토콜·소통 플랫폼이 국가 보안·개인정보 정책을 충족.",na:false},
+  {id:145,area:"gov-pl",sub:"Specific policy level initiatives",text:"케어 연속성의 지역/지방 프로그램 지원을 위한 국가 이니셔티브 자금을 성공적으로 확보하였다.",ex:"원격의료 플랫폼·EHR 개발·e-처방 지원을 위한 국가 자금 지원 신청 성공.",na:false},
+  {id:146,area:"gov-pl",sub:"Specific policy level initiatives",text:"모바일 기기·원격의료·연결성 표준 관련 국가 정책이 구현되었음을 보장한다.",ex:"MDM 시스템 암호화·보안 접근 프로토콜 적용, 원격의료 플랫폼 인증.",na:false},
+  {id:147,area:"gov-pl",sub:"Specific policy level initiatives",text:"케어 연속성 제공의 효과와 가치 측정·최적화를 위한 커뮤니티 차원의 이니셔티브에 적극 참여한다.",ex:"커뮤니티 차원의 효과 실현 접근 방식, 효과 레지스터 및 추적 시스템.",na:false},
+  {id:148,area:"gov-pl",sub:"Specific policy level initiatives",text:"지불·보험·발주 기관의 환자 식별 가능 데이터 접근을 규제하는 커뮤니티 차원의 정책에 합의·구현하였다.",ex:"국가 교환 표준 기반의 암호화된 데이터 보안 교환 플랫폼 관리 접근.",na:false},
+  {id:149,area:"gov-pl",sub:"Specific policy level initiatives",text:"국가 의료 목표·목표치·이니셔티브 지원을 위한 커뮤니티 차원의 이니셔티브에 합의·구현하였다.",ex:"국가 목표 지원 데이터 수집을 위한 준수 시스템·프로세스.",na:false},
+  {id:150,area:"gov-pl",sub:"Specific policy level initiatives",text:"혁신 수용, 내·외부 이해관계자 협력, 개방적 조달 지원 및 모범 사례 공유를 위한 커뮤니티 차원의 이니셔티브에 합의·구현하였다.",ex:"계약상 공유 조달 기회, 소스 코드 공유, 혁신 허브/랩과의 협력.",na:false},
+  {id:151,area:"gov-pl",sub:"Specific policy level initiatives",text:"케어 연속성 활동에서 진행 상황을 체계적으로 측정·결과 평가·결과 공표하는 커뮤니티 차원의 합의를 구현하였다.",ex:"커뮤니티 당뇨 관리 프로그램을 통한 당뇨 관련 입원 감소.",na:false},
+  {id:152,area:"gov-pl",sub:"Specific policy level initiatives",text:"커뮤니티 차원의 정책에 부합하는 통합 케어 제공을 위한 다년간 커뮤니티 차원의 투자 계획에 지속적으로 기여한다.",ex:"인프라 개발 재정 기여, 통합 케어팀 인력 기여.",na:false},
+
+  // ICT (153-175)
+  {id:153,area:"it-ict",sub:"Data source integration and scope",text:"임상 데이터를 전자적으로 생성·저장한다.",ex:"임상 문서, 검사 결과, 영상 보고서.",na:false},
+  {id:154,area:"it-ict",sub:"Data source integration and scope",text:"임상 데이터를 위한 환자 중심 전자 저장소를 사용한다.",ex:"환자의 의료 및 치료 이력을 포함한 EMR.",na:false},
+  {id:155,area:"it-ict",sub:"Data source integration and scope",text:"타 의료기관의 임상·재정 환자 데이터를 집계·접근할 수 있다.",ex:"심장전문의가 수술 후 재활 진행·투약 순응도를 포함한 환자의 최근 임상 결과를 포털에서 검토.",na:false},
+  {id:156,area:"it-ict",sub:"Data source integration and scope",text:"내·외부 원본에서 수집한 임상·재정 데이터의 환자 중심 뷰를 제공한다.",ex:"자원 사용 이해·서비스 계획 지원을 위한 활동 데이터 공유·비교.",na:false},
+  {id:157,area:"it-ict",sub:"Data source integration and scope",text:"모든 케어 세팅의 모든 데이터 소스에서 수집한 임상·재정 데이터의 논리적 환자 중심 뷰를 제공한다.",ex:"조직·임상·인력·품질 KPI 대시보드.",na:false},
+  {id:158,area:"it-ict",sub:"Data source integration and scope",text:"모든 케어 세팅의 모든 데이터 소스에서 수집한 전체 스펙트럼의 준실시간 환자 데이터를 제공한다.",ex:"",na:false},
+  {id:159,area:"it-ict",sub:"External data incorporation",text:"시스템이 최소 하나의 외부 소스에서 임상 또는 재정 데이터를 로드할 수 있다.",ex:"검사·진단 센터, 보험사, 약국, 암/외상 레지스트리.",na:false},
+  {id:160,area:"it-ict",sub:"External data incorporation",text:"시스템이 최소 하나의 외부 소스에서 임상 또는 재정 데이터를 자동 변환·로드할 수 있다.",ex:"검사 참조 범위, 약품 목록, 시술별 비용 데이터.",na:false},
+  {id:161,area:"it-ict",sub:"External data incorporation",text:"시스템이 여러 외부 소스에서 임상·재정 데이터를 자동 변환·로드할 수 있다.",ex:"",na:false},
+  {id:162,area:"it-ict",sub:"External data incorporation",text:"시스템이 모든 소스의 데이터 변환·로드를 가능하게 하는 고도의 유연성을 갖추고 있다.",ex:"HL7, FHIR, CSV, XML 포함 포괄적 데이터 통합 능력.",na:false},
+  {id:163,area:"it-ict",sub:"Patient and provider identification",text:"환자·케어 제공자 식별자를 사용하여 특정 환자에게 케어를 제공한 타 기관을 명확히 식별한다.",ex:"만성 심장 질환 환자가 여러 의료 전문가에게서 케어를 받을 때 시스템이 제공 기관 추적.",na:false},
+  {id:164,area:"it-ict",sub:"Patient and provider identification",text:"시스템이 전자·자동으로 환자·케어 제공자 식별자를 매칭하여 특정 환자에게 어떤 서비스를 제공했는지 명확히 식별한다.",ex:"MPI(Master Patient Index), 국가 주민번호, 건강보험번호.",na:false},
+  {id:165,area:"it-ict",sub:"Patient and provider identification",text:"시스템이 최소 하나의 개인 식별 수단을 사용하여 ICT 시스템에 대한 접근 권한을 관리한다.",ex:"스마트카드, 사용자명 및 비밀번호, RFID 배지, 생체 인식(지문, 눈 스캔).",na:false},
+  {id:166,area:"it-ict",sub:"Data processing",text:"시스템이 임상 데이터의 최소 50% 이상을 구조화된 형식으로 캡처한다.",ex:"인구통계 데이터, 임상 관찰, 진단, 시술, 투약, 케어 플랜이 구조화 형식으로 캡처.",na:false},
+  {id:167,area:"it-ict",sub:"Data processing",text:"시스템이 자동화된 전자 의료 분류·어휘 도구를 사용한다.",ex:"CPT, ICD, SNOMED, LOINC, OPCS4 또는 기타 국가 표준.",na:true},
+  {id:168,area:"it-ict",sub:"Data processing",text:"시스템이 케어 세팅 전반에 걸쳐 CDS 및 고급 분석을 구동하기 위해 명확한 데이터를 공유한다.",ex:"처방의 동일한 데이터 형식(약물-용량-빈도) 및 AMI 진단.",na:false},
+  {id:169,area:"it-ict",sub:"Data processing",text:"시스템이 구조화된 출력 생성을 위해 통합 NLP를 사용한다.",ex:"자유 텍스트 보고서에서 임상 데이터 추출·코딩, 입원 노트 CDS 지원 코딩.",na:false},
+  {id:170,area:"it-ict",sub:"Data processing",text:"시스템이 여러 케어 세팅과 소스(환자 포함)의 의미 데이터를 사용하여 PHM을 구동한다.",ex:"병원·GP·환자 웨어러블 임상 데이터를 집계하여 인구 전반의 만성질환 관리 추세 분석.",na:false},
+  {id:171,area:"it-ict",sub:"Data processing",text:"시스템이 정기적으로 의미 데이터를 사용하여 케어 세팅 전반의 모범 사례 표준을 정제한다.",ex:"분석된 의미 데이터로 케어 연속체 전반의 COPD·당뇨·치매 케어 경로/프로토콜 강화.",na:false},
+  {id:172,area:"it-ict",sub:"Data processing",text:"시스템이 커뮤니티 내 모든 케어 세팅의 다단계 CDSS를 지원하는 양방향 데이터 플로우를 갖추고 있다.",ex:"약물 상호작용 발견 시 치료 참여 기관 공유·환자 교육·커뮤니티 케어 플랜 통합.",na:false},
+  {id:173,area:"it-ict",sub:"Access and Mobility",text:"케어 시점 활동 지원을 위해 모바일 인터페이스(Wi-Fi)를 사용한다.",ex:"의사가 태블릿으로 투약 처방, 이동식 의료 기기로 침상 바이탈 문서화.",na:false},
+  {id:174,area:"it-ict",sub:"Access and Mobility",text:"케어 시점에서 모바일 인터페이스를 사용하여 EMR 데이터를 수집한다.",ex:"침상 혈당 검사 결과가 자동으로 EMR에 전송.",na:true},
+  {id:175,area:"it-ict",sub:"Access and Mobility",text:"모든 케어 세팅의 다학제 팀 모든 구성원을 위한 모바일 인터페이스를 지원한다.",ex:"의사·간호사·치료사·사회복지사가 모바일 인터페이스를 사용하여 환자 기록 접근·협력.",na:false},
+
+  // Standards (176-185)
+  {id:176,area:"it-std",sub:"Data Standards",text:"인정된 HIE 표준이 시스템 조달 또는 자체 프로그래밍에 적용되도록 보장하는 정책을 사용한다.",ex:"HL7, DICOM, CDA, FHIR, XDS 등 표준을 고려하여 상호운용성 향상.",na:false},
+  {id:177,area:"it-std",sub:"Data Standards",text:"내부 시스템 간 이산 데이터 교환을 지원하는 표준화된 템플릿·메시징 프로토콜을 사용한다.",ex:"검사 시스템과 EMR 간 환자 정보·검사 오더·결과의 원활한 교환.",na:false},
+  {id:178,area:"it-std",sub:"Data Standards",text:"외부 케어 제공자와 데이터를 교환하기 위해 인정된 HIE 표준·프로토콜을 사용한다.",ex:"HL7, FHIR, DICOM, IHE, CDA, SNOMED CT.",na:false},
+  {id:179,area:"it-std",sub:"Data Standards",text:"케어 세팅 간 시스템·데이터 필드 간 이산 데이터 교환을 지원하는 표준화된 템플릿·메시징 프로토콜을 사용한다.",ex:"GP의 의뢰 서신이 병원 EMR의 데이터 필드를 자동 입력.",na:false},
+  {id:180,area:"it-std",sub:"Data Standards",text:"지역/국가 시스템·인프라 접근을 제어하는 상호운용성 표준을 준수한다.",ex:"영국 NHS Spine, 오스트리아 ELGA, 스웨덴 국가 HIE 플랫폼 등.",na:false},
+  {id:181,area:"it-std",sub:"Data Standards",text:"모든 API(내부·제3자)가 체계적이고 연간 검토되도록 보장하는 프로세스를 보유하고 있다.",ex:"API 인벤토리, 검토 프로세스 및 연간 검토 일정.",na:false},
+  {id:182,area:"it-std",sub:"Data Standards",text:"모든 HIE 표준이 체계적으로 연간 위험 평가되고 적절히 업데이트되도록 보장하는 프로세스를 보유하고 있다.",ex:"병원이 연간 HIE 표준을 검토·업데이트하여 알레르기 정보 자동 포함으로 전환.",na:false},
+  {id:183,area:"it-std",sub:"Data Standards",text:"자가 관리·생활 습관·웰니스 관리를 지원하는 환자와의 데이터 교환이 인정되고 안전한 표준을 준수함을 보장한다.",ex:"의료기관이 제공하거나 권고한 모바일 앱이 표준을 준수.",na:false},
+  {id:184,area:"it-std",sub:"Data Standards",text:"모든 케어 세팅의 모든 ICT 시스템에서 모든 유형의 임상·재정 데이터 교환 표준을 수용하였다.",ex:"임상·재정 데이터 공유의 모든 옵션을 문서화하여 지속적 개선 촉진.",na:false},
+  {id:185,area:"it-std",sub:"Data Standards",text:"모든 케어 세팅의 모든 ICT 시스템에서 모든 유형의 임상·재정 데이터 교환 표준 컴플라이언스를 검토·문서화한다.",ex:"",na:false},
+
+  // Security (186-197)
+  {id:186,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"데이터 보안 표준을 개략적으로 기술하는 문서화·최신화된 정책을 보유하고 있다.",ex:"바이러스 방지, 암호화, 접근 보안.",na:false},
+  {id:187,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"ICT 시스템에 대한 접근을 제어하는 문서화된 정책을 보유하고 있다.",ex:"ID 및 접근 관리 정책.",na:false},
+  {id:188,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"ICT 시스템 접근 관리를 위한 전용 접근 제어 모델(RBAC, ABAC 등)을 사용한다.",ex:"간호사와 의사, 행정 직원 간 역할·접근 권한 차별화.",na:false},
+  {id:189,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"외부 또는 원격 시스템 사용자에게 이중 인증(또는 더 높은 표준)을 요구한다.",ex:"이메일/문자/생체 인식 확인, 보안 질문, 하드웨어 토큰.",na:false},
+  {id:190,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"개인정보 및 데이터 보안을 보장하기 위해 정기적으로 데이터를 교환하는 기관 간 데이터 공유 협약을 보유하고 있다.",ex:"의료기관 간 HIE, 보험 청구 처리, 연구 협력.",na:false},
+  {id:191,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"환자 데이터의 적절한 접근·사용을 측정·모니터링하는 포괄적이고 최신화된 감사 추적을 제공할 수 있다.",ex:"의사가 환자 의료 이력 조회 또는 새 노트 추가 시 접근 로그 추적.",na:false},
+  {id:192,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"12개월마다 검토되는 활성 개인정보 침해 대응 정책을 보유하고 있다.",ex:"직원이 환자 데이터가 담긴 USB를 발견했을 때의 대응 절차.",na:false},
+  {id:193,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"환자 데이터가 부적절하게 접근될 경우 자동 알림을 받는다.",ex:"짧은 시간 내 대량 기록 접근, 정규 업무 시간 외 접근, 미확인 기기/위치 접근.",na:false},
+  {id:194,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"케어 커뮤니티 전반의 환자 데이터 접근을 표준화하기 위해 접근 제어 및 사용자 식별을 관리하는 중앙화된 기관을 사용한다.",ex:"SSO로 의사가 여러 애플리케이션 접근, 중앙화된 사용자 관리로 모든 필요 시스템 접근.",na:false},
+  {id:195,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"개인(환자, 가족, 경찰 등)의 의무기록 접근 요청을 처리하는 프로세스를 보유하고 있으며, 필요 시 포괄적인 이벤트 이력을 제공할 수 있다.",ex:"가족/법적 대리인의 공식 프로세스를 통한 접근 요청, 환자의 포털 이력 접근.",na:false},
+  {id:196,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"자신의 임상 기록에 대한 접근 제어를 원하는 환자의 요청을 적시에 관리할 수 있다.",ex:"환자의 임상 기록 접근 허용/취소, 응급 상황 시 가족에게 신속한 접근 허용.",na:false},
+  {id:197,area:"it-sec",sub:"Capabilities, access control, and appropriate use of data",text:"환자/시민이 접근 제어를 정기적으로 검토·업데이트하도록 상기시키는 전자 프로세스를 사용한다.",ex:"이메일 알림, 포털 알림, 자동 문자 메시지, 인앱 알림.",na:false}
+];
+
+// ===== STATE =====
+const answers = {};
+const SC = {not:0,minimal:1,somewhat:2,mostly:3,fully:4};
+
+// ===== BUILD PANEL =====
+function buildPanel(areaId) {
+  const panel = document.getElementById('tab-' + areaId);
+  if (!panel || panel.dataset.built) return;
+  panel.dataset.built = '1';
+
+  const qs = ALL_Q.filter(q => q.area === areaId);
+  const fa = FA[areaId];
+
+  let html = `
+    <div class="sec-head">
+      <div class="sec-icon ${fa.cls}">${fa.icon}</div>
+      <div>
+        <div class="sec-title">${fa.label}</div>
+        <div class="sec-sub">${fa.stake} Stakeholder · Q${qs[0].id}–Q${qs[qs.length-1].id}</div>
+      </div>
+      <div class="sec-badge">${qs.length}문항</div>
+    </div>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#cbd5e1"></div>Not Enabled</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#fca5a5"></div>Minimally</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#fdba74"></div>Somewhat</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#fcd34d"></div>Mostly</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#86efac"></div>Fully</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#e2e8f0"></div>N/A</div>
+    </div>
+    <div class="q-list">
+  `;
+
+  let lastSub = '';
+  for (const q of qs) {
+    if (q.sub !== lastSub) {
+      lastSub = q.sub;
+      html += `<div class="sub-head">${q.sub}</div>`;
+    }
+
+    const opts = OPT_LABELS.map((lbl, i) => {
+      const k = OPT_KEYS[i];
+      const cur = answers[q.id];
+      const cls = cur === k ? `q-opt sel-${k}` : 'q-opt';
+      return `<button class="${cls}" id="o-${q.id}-${k}" onclick="pick(${q.id},'${k}')">${lbl}</button>`;
+    }).join('');
+
+    const naBtn = q.na
+      ? `<button class="${answers[q.id]==='na'?'q-opt sel-na':'q-opt'}" id="o-${q.id}-na" onclick="pick(${q.id},'na')">N/A</button>`
+      : '';
+
+    const hasAns = !!answers[q.id];
+    html += `
+      <div class="q-card${hasAns?' answered':''}" id="qc-${q.id}">
+        <div class="q-top">
+          <span class="q-num">Q${q.id}</span>
+          <div>
+            <div class="q-text">${q.text}</div>
+            ${q.ex ? `<div class="q-example">예) ${q.ex}</div>` : ''}
+          </div>
+        </div>
+        <div class="q-opts">${opts}${naBtn}</div>
+      </div>
+    `;
+  }
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+// ===== ANSWER =====
+function pick(qId, val) {
+  [...OPT_KEYS, 'na'].forEach(k => {
+    const b = document.getElementById(`o-${qId}-${k}`);
+    if (b) b.className = 'q-opt';
+  });
+  const sel = document.getElementById(`o-${qId}-${val}`);
+  if (sel) sel.className = `q-opt sel-${val}`;
+  answers[qId] = val;
+
+  const card = document.getElementById(`qc-${qId}`);
+  if (card) card.classList.add('answered');
+
+  refresh();
+  refreshSummary();
+}
+
+// ===== REFRESH =====
+function refresh() {
+  const total = ALL_Q.length;
+  const done  = Object.keys(answers).length;
+  const pct   = Math.round(done / total * 100);
+
+  document.getElementById('progTxt').textContent = `${done} / ${total}`;
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progPct').textContent  = pct + '%';
+  document.getElementById('statPct').textContent  = pct + '%';
+  document.getElementById('statSub').textContent  = `${done}개 응답 완료`;
+
+  // Score
+  const valid = Object.entries(answers).filter(([,v]) => v !== 'na');
+  const sum   = valid.reduce((a,[,v]) => a + (SC[v]||0), 0);
+  const max   = valid.length * 4;
+  const score = max > 0 ? Math.round(sum / max * 100) : 0;
+
+  document.getElementById('ringArc').style.strokeDashoffset = 314 - (314 * score / 100);
+  document.getElementById('ringNum').textContent = score;
+
+  // Domain bars
+  const groups = {
+    cl: ALL_Q.filter(q => ['clinical-cc','clinical-pe','clinical-aa','clinical-hie'].includes(q.area)),
+    gv: ALL_Q.filter(q => ['gov-os','gov-pl'].includes(q.area)),
+    it: ALL_Q.filter(q => ['it-ict','it-std','it-sec'].includes(q.area)),
+    cc: ALL_Q.filter(q => q.area === 'clinical-cc'),
+    pe: ALL_Q.filter(q => q.area === 'clinical-pe'),
+    hie:ALL_Q.filter(q => q.area === 'clinical-hie')
+  };
+
+  function ds(qs) {
+    const a = qs.map(q => answers[q.id]).filter(v => v && v !== 'na');
+    const p = a.length ? Math.round(a.reduce((acc,v)=>acc+(SC[v]||0),0)/(a.length*4)*100) : 0;
+    return {p, lbl:`${qs.filter(q=>answers[q.id]).length} / ${qs.length}`};
+  }
+
+  [['cl','cl'],['gv','gv'],['it','it'],['cc','cc'],['pe','pe'],['hie','hie']].forEach(([k,id]) => {
+    const d = ds(groups[k]);
+    document.getElementById(`sb-${id}`).style.width = d.p + '%';
+    document.getElementById(`sv-${id}`).textContent = d.lbl;
+  });
+
+  refreshOverviewBars();
+}
+
+function refreshOverviewBars() {
+  const c = document.getElementById('ovBars');
+  if (!c) return;
+  let h = '';
+  for (const [id, fa] of Object.entries(FA)) {
+    const qs   = ALL_Q.filter(q => q.area === id);
+    const done = qs.filter(q => answers[q.id]).length;
+    const pct  = Math.round(done / qs.length * 100);
+    h += `
+      <div class="dbar-row">
+        <div class="dbar-lbl">${fa.short}: ${fa.label.slice(0,18)}</div>
+        <div class="dbar-track">
+          <div class="dbar-fill" style="width:${pct}%;background:${fa.color}"></div>
+        </div>
+        <div class="dbar-pct">${pct}%</div>
+      </div>
+    `;
+  }
+  c.innerHTML = h;
+}
+
+// ===== SUMMARY =====
+function refreshSummary() {
+  const tbody = document.getElementById('sumBody');
+  const ents  = Object.entries(answers).sort((a,b)=>+a[0]-+b[0]);
+  if (!ents.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:40px;background:var(--surface2)">아직 응답한 문항이 없습니다</td></tr>';
+    return;
+  }
+
+  const pm = {not:['pill-not','Not Enabled'],minimal:['pill-min','Minimally'],somewhat:['pill-som','Somewhat'],mostly:['pill-mos','Mostly'],fully:['pill-ful','Fully'],na:['pill-na','N/A']};
+
+  tbody.innerHTML = ents.map(([idS, v]) => {
+    const q  = ALL_Q.find(x => x.id === +idS);
+    if (!q) return '';
+    const fa       = FA[q.area];
+    const [cls,lbl] = pm[v] || ['pill-not','—'];
+    return `
+      <tr>
+        <td style="font-family:'IBM Plex Mono',monospace;color:var(--text3);font-size:11px">Q${q.id}</td>
+        <td><span style="font-size:11px;font-weight:600;color:${fa.color}">${fa.short}</span></td>
+        <td style="max-width:380px;font-size:12px">${q.text.slice(0,65)}${q.text.length>65?'…':''}</td>
+        <td><span class="pill ${cls}">${lbl}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  // Stage estimate
+  const tot = Object.keys(answers).length;
+  const ful = Object.values(answers).filter(v=>v==='fully').length;
+  const mos = Object.values(answers).filter(v=>v==='mostly').length;
+  const hi  = tot > 0 ? (ful+mos)/tot : 0;
+
+  let st = 0;
+  if (hi>0.85) st=7; else if (hi>0.7) st=6; else if (hi>0.55) st=5;
+  else if (hi>0.4) st=4; else if (hi>0.25) st=3; else if (hi>0.15) st=2;
+  else if (tot>0) st=1;
+
+  const si = STAGES[st];
+  document.getElementById('resStage').textContent = `Stage ${st} — ${si.name}`;
+  document.getElementById('resDesc').textContent   = si.desc + ` (응답된 ${tot}개 문항 기준 추정치입니다. HIMSS 공식 평가는 별도의 검증 프로세스를 통해 진행됩니다.)`;
+  if (tot > 0) document.getElementById('resultBox').classList.add('show');
+}
+
+// ===== EXPORT =====
+function exportCSV() {
+  const rows = [['Q번호','Focus Area','이해관계자','문항 내용','응답']];
+  const vm = {not:'Not Enabled',minimal:'Minimally Enabled',somewhat:'Somewhat Enabled',mostly:'Mostly Enabled',fully:'Fully Enabled',na:'Not Applicable'};
+  for (const q of ALL_Q) {
+    const fa = FA[q.area];
+    rows.push([`Q${q.id}`,fa.label,fa.stake,q.text,vm[answers[q.id]]||'(미응답)']);
+  }
+  const csv  = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download='CCMM_Assessment_SNUBH.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== TAB SWITCH =====
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const panel = document.getElementById('tab-'+id);
+  if (panel) { panel.classList.add('active'); buildPanel(id); }
+  if (btn) btn.classList.add('active');
+  refresh();
+}
+
+// ===== INIT =====
+window.addEventListener('load', () => {
+  document.getElementById('stageDefs').innerHTML = STAGES.map(s=>`
+    <div class="stage-card ${s.stage>=5?'hi':''}">
+      <div class="st-num">${s.stage}</div>
+      <div>
+        <div class="st-name">Stage ${s.stage} — ${s.name}</div>
+        <div class="st-desc">${s.desc}</div>
+      </div>
+    </div>
+  `).join('');
+  refreshOverviewBars();
+});
+</script>
+</body>
+</html>
