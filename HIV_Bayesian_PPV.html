@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HIV 진단 알고리즘 · 순차 Bayesian PPV 분석</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f6fa;--surface:#fff;--surface2:#f8fafc;
+  --border:#e2e8f0;--border2:#cbd5e1;
+  --text:#1e293b;--text2:#475569;--text3:#94a3b8;
+  --blue:#185FA5;--blue-bg:#E6F1FB;--blue-mid:#378ADD;
+  --green:#1D9E75;--green-bg:#E1F5EE;--green-dark:#0F6E56;
+  --purple:#7F77DD;--purple-bg:#EEEDFE;--purple-dark:#3C3489;
+  --amber:#BA7517;--amber-bg:#FAEEDA;
+  --red:#A32D2D;--red-bg:#FCEBEB;--red-mid:#E24B4A;
+  --gray:#5F5E5A;--gray-bg:#F1EFE8;--gray-mid:#888780;
+  --radius:10px;--radius-sm:6px;
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+
+/* NAV */
+nav{background:var(--text);color:#fff;padding:0;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.nav-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:0;padding:0 16px}
+.nav-brand{font-size:14px;font-weight:600;color:#fff;padding:14px 0;flex-shrink:0;margin-right:16px}
+.nav-tabs{display:flex;gap:0;overflow-x:auto;flex:1}
+.nav-tab{padding:14px 16px;font-size:12px;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.nav-tab:hover{color:#e2e8f0}
+.nav-tab.active{color:#fff;border-bottom-color:#60a5fa}
+
+/* LAYOUT */
+.page{display:none;max-width:960px;margin:0 auto;padding:28px 16px 60px}
+.page.show{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin-bottom:14px}
+
+/* GROUPS */
+.group-selector{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+.gc-btn{padding:5px 13px;border-radius:20px;border:1px solid var(--border2);background:transparent;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
+.gc-btn:hover{background:var(--bg)}
+.gc-btn.active{background:#1e40af;border-color:#1e40af;color:#fff;font-weight:600}
+
+/* METRICS */
+.metrics-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+@media(max-width:560px){.metrics-row{grid-template-columns:1fr 1fr}}
+.metric{background:var(--bg);border-radius:8px;padding:12px 14px;border:1px solid var(--border)}
+.metric-l{font-size:10px;color:var(--text2);margin-bottom:4px;font-weight:500}
+.metric-v{font-size:26px;font-weight:700;line-height:1.1;transition:color .4s}
+.metric-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* BAR */
+.bar-wrap{height:28px;border-radius:6px;overflow:hidden;display:flex;background:var(--bg);border:1px solid var(--border);margin-bottom:6px}
+.bar-tp{background:var(--green);transition:width .4s ease}
+.bar-fp{background:var(--red-mid);transition:width .4s ease}
+.bar-leg{display:flex;gap:18px;font-size:11px;color:var(--text2);margin-bottom:16px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
+
+/* NATURAL FREQ */
+.nf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.nf-cell{border-radius:8px;padding:10px 8px;text-align:center;border:1px solid var(--border);background:var(--surface)}
+.nf-v{font-size:17px;font-weight:700;margin-bottom:2px}
+.nf-l{font-size:10px;color:var(--text2)}
+
+/* FREQ BOX */
+.freq-box{background:var(--bg);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--text2);line-height:1.8;border:1px solid var(--border)}
+.freq-box strong{color:var(--text);font-weight:600}
+
+/* CONFUSION MATRIX */
+.cm-top-labels{display:flex;padding-left:90px;gap:4px;margin-bottom:4px;max-width:540px}
+.cm-top-label{flex:1;text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:5px;background:var(--bg);border-radius:6px}
+.cm-grid{display:grid;grid-template-columns:90px 1fr 1fr;gap:4px;max-width:540px;margin-bottom:4px}
+.cm-row-labels{display:grid;grid-template-rows:1fr 1fr;gap:4px;grid-row:span 2}
+.cm-row-label{display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:700;color:var(--text2)}
+.cm-cell{border-radius:8px;padding:12px 10px;text-align:center;border:1px solid transparent;transition:all .4s}
+.cm-cell-label{font-size:10px;font-weight:700;letter-spacing:.06em;margin-bottom:4px}
+.cm-cell-n{font-size:22px;font-weight:800;margin-bottom:2px;transition:font-size .4s}
+.cm-cell-pct{font-size:10px}
+.cm-cell-desc{font-size:10px;opacity:.7;margin-top:2px}
+.cm-tp{background:#d1fae5;border-color:var(--green);color:#065f46}
+.cm-fp{background:#fee2e2;border-color:var(--red-mid);color:#991b1b}
+.cm-fn{background:#fef3c7;border-color:var(--amber);color:#92400e}
+.cm-tn{background:#f1f5f9;border-color:#94a3b8;color:#475569}
+.cm-totals{display:grid;grid-template-columns:90px 1fr 1fr;gap:4px;max-width:540px;margin-bottom:6px}
+.cm-total-cell{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;text-align:center;font-size:11px;color:var(--text2)}
+.cm-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:540px;margin-top:12px}
+.cm-stat{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+.cm-stat-l{font-size:11px;color:var(--text2)}
+.cm-stat-v{font-size:16px;font-weight:700}
+
+/* INSIGHT BOX */
+.insight{display:flex;gap:10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:11px 14px;font-size:12px;color:#78350f;line-height:1.7;margin-top:12px}
+.insight.info{background:#eff6ff;border-color:#93c5fd;color:#1e3a8a}
+.insight.success{background:#f0fdf4;border-color:#86efac;color:#14532d}
+
+/* FLOW (sequential) */
+.flow{display:flex;flex-direction:column;gap:0;margin-bottom:18px}
+.flow-step{display:flex;align-items:stretch;gap:0;min-height:80px}
+.flow-left{width:44px;display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.vline{width:2px;flex:1;transition:background .4s}
+.fdot{width:14px;height:14px;border-radius:50%;border:2.5px solid;flex-shrink:0;background:var(--surface);transition:all .4s}
+.fbody{flex:1;padding:11px 15px;border-radius:10px;border:1px solid var(--border);background:var(--bg);margin:5px 0;transition:all .4s;min-width:0}
+.fbody.lit{background:var(--surface);border-color:var(--border2)}
+.step-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.step-tag{font-size:10px;font-weight:600;letter-spacing:.06em;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:5px}
+.step-ppv{font-size:24px;font-weight:700;transition:color .4s;text-align:right;flex-shrink:0}
+.step-ppv-sub{font-size:10px;color:var(--text3);text-align:right}
+.step-desc{font-size:11px;color:var(--text2);line-height:1.6}
+.step-params{font-size:10px;color:var(--text3);margin-top:4px}
+
+/* BRANCHES */
+.branches{display:flex;gap:8px;margin:2px 0 2px 44px}
+.branch{flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);min-width:0;transition:all .4s}
+.branch-head{font-size:10px;font-weight:700;margin-bottom:3px}
+.branch-ppv{font-size:17px;font-weight:700;margin-bottom:2px;transition:color .4s}
+.branch-note{font-size:10px;color:var(--text2);line-height:1.5}
+
+/* CHART */
+.chart-wrap{position:relative;width:100%;height:240px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.cl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.cl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* TABLE */
+.comp-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.comp-table th{text-align:left;padding:8px 10px;background:var(--bg);font-weight:600;font-size:11px;border-bottom:2px solid var(--border2);color:var(--text2)}
+.comp-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table tr:hover td{background:var(--bg)}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600}
+
+/* INTRO */
+.intro-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0}
+@media(max-width:600px){.intro-grid{grid-template-columns:1fr}}
+.intro-cell{background:var(--bg);border-radius:8px;padding:12px 14px;border:1px solid var(--border);font-size:12px;line-height:1.75;color:var(--text2)}
+.intro-cell strong{color:var(--text);font-weight:600;display:block;margin-bottom:3px}
+
+/* ALGO diagram */
+.algo-svg{width:100%;overflow:visible;display:block}
+
+/* FOOTER */
+.page-footer{text-align:center;font-size:11px;color:var(--text3);padding-top:10px;border-top:1px solid var(--border);margin-top:8px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <span class="nav-brand">HIV 진단 · Bayesian PPV</span>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('overview',this)">개요 &amp; 알고리즘</button>
+      <button class="nav-tab" onclick="showPage('single',this)">단일 검사 PPV</button>
+      <button class="nav-tab" onclick="showPage('sequential',this)">순차 검사 PPV</button>
+      <button class="nav-tab" onclick="showPage('matrix',this)">Confusion Matrix</button>
+      <button class="nav-tab" onclick="showPage('curve',this)">PPV 곡선 비교</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════ PAGE: OVERVIEW ═══════════════════════════════════ -->
+<div id="page-overview" class="page show">
+  <div class="card">
+    <p class="card-title">EBM은 Bayesian Process — 핵심 개념</p>
+    <div class="intro-grid">
+      <div class="intro-cell"><strong>사전 확률 (Prior)</strong>병력·역학·신체검사로 형성. 검사 전 질환 확률. 집단마다 다름.</div>
+      <div class="intro-cell"><strong>Likelihood Ratio (LR)</strong>검사의 Se·Sp로 결정. LR+ = Se/(1-Sp). 검사 결과가 Prior를 얼마나 바꾸는가.</div>
+      <div class="intro-cell"><strong>사후 확률 (Posterior = PPV)</strong>Bayes 정리로 계산. 양성 판정 시 실제 감염 확률. 집단에 따라 3%~99%+.</div>
+      <div class="intro-cell"><strong>순차 검사의 원리</strong>각 단계의 Posterior가 다음 단계의 Prior. 단계마다 PPV가 급등하는 이유.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">CDC 2014 HIV 진단 알고리즘</p>
+    <svg class="algo-svg" viewBox="0 0 680 340">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+        <marker id="ahg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+        <marker id="ahp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#7F77DD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <!-- Step 1 -->
+      <rect x="200" y="10" width="280" height="52" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+      <text x="340" y="31" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="600" fill="#0C447C">Step 1 · 4세대 Ag/Ab 병합 검사</text>
+      <text x="340" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#185FA5">HIV-1/2 immunoassay · Se=99.5% · Sp=99.5%</text>
+      <!-- (-) arrow right -->
+      <line x1="480" y1="36" x2="548" y2="36" stroke="#94a3b8" stroke-width="1" marker-end="url(#ah)"/>
+      <text x="514" y="30" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#888780">(−)</text>
+      <rect x="550" y="18" width="118" height="36" rx="7" fill="#F1EFE8" stroke="#888780" stroke-width="0.75"/>
+      <text x="609" y="33" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#444441">HIV-1 &amp; HIV-2</text>
+      <text x="609" y="46" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#444441">음성 (검사 종료)</text>
+      <!-- (+) arrow down -->
+      <line x1="340" y1="62" x2="340" y2="90" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#ahg)"/>
+      <text x="350" y="80" font-family="sans-serif" font-size="9" fill="#1D9E75">(+)</text>
+      <!-- Step 2 -->
+      <rect x="180" y="92" width="320" height="52" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="1"/>
+      <text x="340" y="113" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="600" fill="#085041">Step 2 · HIV-1/2 감별 면역검사</text>
+      <text x="340" y="130" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#0F6E56">Antibody differentiation immunoassay · Se=99% · Sp=99.9%</text>
+      <!-- 4 outcomes from Step 2 -->
+      <line x1="220" y1="144" x2="80" y2="172" stroke="#1D9E75" stroke-width="0.9" marker-end="url(#ahg)"/>
+      <line x1="285" y1="144" x2="230" y2="172" stroke="#1D9E75" stroke-width="0.9" marker-end="url(#ahg)"/>
+      <line x1="395" y1="144" x2="390" y2="172" stroke="#1D9E75" stroke-width="0.9" marker-end="url(#ahg)"/>
+      <line x1="455" y1="144" x2="520" y2="172" stroke="#94a3b8" stroke-width="0.9" marker-end="url(#ah)"/>
+      <!-- 4 outcome boxes -->
+      <rect x="12" y="173" width="126" height="52" rx="7" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.75"/>
+      <text x="75" y="191" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#085041">HIV-1(+) HIV-2(−)</text>
+      <text x="75" y="205" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#0F6E56" font-weight="600">HIV-1 감염 확진</text>
+      <text x="75" y="219" text-anchor="middle" font-family="sans-serif" font-size="8.5" fill="#1D9E75">PPV ≈ 97~100%</text>
+
+      <rect x="150" y="173" width="126" height="52" rx="7" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.75"/>
+      <text x="213" y="191" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#085041">HIV-1(−) HIV-2(+)</text>
+      <text x="213" y="205" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#0F6E56" font-weight="600">HIV-2 감염 확진</text>
+      <text x="213" y="219" text-anchor="middle" font-family="sans-serif" font-size="8.5" fill="#1D9E75">PPV ≈ 97~100%</text>
+
+      <rect x="324" y="173" width="126" height="52" rx="7" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.75"/>
+      <text x="387" y="191" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#085041">HIV-1(+) HIV-2(+)</text>
+      <text x="387" y="205" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#0F6E56" font-weight="600">HIV-1&amp;2 동시감염</text>
+      <text x="387" y="219" text-anchor="middle" font-family="sans-serif" font-size="8.5" fill="#1D9E75">PPV ≈ 97~100%</text>
+
+      <rect x="462" y="173" width="130" height="52" rx="7" fill="#F1EFE8" stroke="#888780" stroke-width="0.75"/>
+      <text x="527" y="191" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#444441">음성 또는 불확정</text>
+      <text x="527" y="205" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#5F5E5A">→ Step 3 진행</text>
+      <text x="527" y="219" text-anchor="middle" font-family="sans-serif" font-size="8.5" fill="#888780">급성 감염 의심</text>
+
+      <!-- Arrow to Step 3 -->
+      <line x1="527" y1="225" x2="527" y2="258" stroke="#7F77DD" stroke-width="1.2" marker-end="url(#ahp)"/>
+      <!-- Step 3 -->
+      <rect x="400" y="260" width="254" height="52" rx="8" fill="#EEEDFE" stroke="#7F77DD" stroke-width="1"/>
+      <text x="527" y="281" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="600" fill="#3C3489">Step 3 · 핵산증폭 (NAT/RNA)</text>
+      <text x="527" y="298" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#534AB7">HIV-1 RNA 직접 검출 · 골드스탠다드</text>
+      <!-- RNA outcomes -->
+      <line x1="470" y1="312" x2="430" y2="328" stroke="#7F77DD" stroke-width="0.9" marker-end="url(#ahp)"/>
+      <line x1="584" y1="312" x2="620" y2="328" stroke="#94a3b8" stroke-width="0.9" marker-end="url(#ah)"/>
+      <rect x="370" y="329" width="114" height="8" rx="4" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
+      <text x="427" y="337" text-anchor="middle" font-family="sans-serif" font-size="8.5" fill="#3C3489">RNA(+) → 급성감염 확진</text>
+      <rect x="560" y="329" width="114" height="8" rx="4" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+      <text x="617" y="337" text-anchor="middle" font-family="sans-serif" font-size="8.5" fill="#5F5E5A">RNA(−) → HIV-1 음성</text>
+      <!-- Gold standard badge -->
+      <rect x="398" y="256" width="84" height="16" rx="4" fill="#EF9F27"/>
+      <text x="440" y="268" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="600" fill="#fff">GOLD STANDARD</text>
+    </svg>
+  </div>
+
+  <div class="card">
+    <p class="card-title">순차 검사가 PPV를 높이는 원리</p>
+    <div class="intro-grid">
+      <div class="intro-cell"><strong>Step 1 이후 → Step 2의 Prior가 됨</strong>Step 1 양성 집단은 이미 Prior가 높아진 집단. 일반 인구 0.015% → Step 1+ 후 ~2.9%로 업데이트.</div>
+      <div class="intro-cell"><strong>Step 2의 높은 Sp(99.9%)가 핵심</strong>높은 특이도로 FP를 강하게 줄임. 대부분의 위험군에서 Step 2+ 후 PPV 96% 이상으로 급등.</div>
+      <div class="intro-cell"><strong>RNA arm: 특수한 Prior 구조</strong>Step 2 음성·불확정 집단 = S1 FP + S1 진양성 중 S2 FN. 저위험군에서 이 Prior가 매우 낮아 RNA PPV도 낮음.</div>
+      <div class="intro-cell"><strong>임상 결론</strong>위험군 선별(Prior 높이기)이 검사 성능보다 중요. 저위험군 양성은 반드시 다단계 확인 필요.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PAGE: SINGLE ═══════════════════════════════════ -->
+<div id="page-single" class="page">
+  <div class="card">
+    <p class="card-title">Step 1 단일 검사 PPV — 4세대 Ag/Ab 병합 검사 (Se=Sp=99.5%)</p>
+    <div class="group-selector" id="singleBtns"></div>
+    <div class="metrics-row">
+      <div class="metric">
+        <div class="metric-l">사전 확률 (유병률)</div>
+        <div class="metric-v" id="s1prev">—</div>
+        <div class="metric-sub" id="s1prevNote">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-l">양성예측도 (PPV)</div>
+        <div class="metric-v" id="s1ppv">—</div>
+        <div class="metric-sub" id="s1ppvNote">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-l">음성예측도 (NPV)</div>
+        <div class="metric-v" id="s1npv" style="color:var(--green)">—</div>
+        <div class="metric-sub">음성이면 감염 가능성 극히 낮음</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:5px">양성 판정의 구성 — 진양성(TP) vs 위양성(FP)</div>
+    <div class="bar-wrap">
+      <div class="bar-tp" id="sBar1" style="width:50%"></div>
+      <div class="bar-fp" id="sBar2" style="width:50%"></div>
+    </div>
+    <div class="bar-leg">
+      <span><span class="dot" style="background:var(--green)"></span>진양성 (TP)</span>
+      <span><span class="dot" style="background:var(--red-mid)"></span>위양성 (FP)</span>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:500">10만 명 자연 빈도</div>
+    <div class="nf-grid">
+      <div class="nf-cell" style="border-top:2px solid var(--green)"><div class="nf-v" id="s1TP" style="color:var(--green)">—</div><div class="nf-l">TP 진양성</div></div>
+      <div class="nf-cell" style="border-top:2px solid var(--red-mid)"><div class="nf-v" id="s1FP" style="color:var(--red-mid)">—</div><div class="nf-l">FP 위양성</div></div>
+      <div class="nf-cell" style="border-top:2px solid var(--amber)"><div class="nf-v" id="s1FN" style="color:var(--amber)">—</div><div class="nf-l">FN 위음성</div></div>
+      <div class="nf-cell" style="border-top:2px solid var(--gray-mid)"><div class="nf-v" id="s1TN" style="color:var(--gray-mid)">—</div><div class="nf-l">TN 진음성</div></div>
+    </div>
+    <div class="freq-box" id="s1note"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PAGE: SEQUENTIAL ═══════════════════════════════════ -->
+<div id="page-sequential" class="page">
+  <div class="card">
+    <p class="card-title">3단계 순차 검사 · Bayesian 업데이트</p>
+    <div class="group-selector" id="seqBtns"></div>
+
+    <div class="flow" id="seqFlow">
+      <!-- Step 1 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="vline" style="background:transparent"></div>
+          <div class="fdot" style="border-color:var(--blue-mid)"></div>
+          <div class="vline" style="background:var(--blue-mid)"></div>
+        </div>
+        <div class="fbody lit">
+          <div class="step-head">
+            <div>
+              <span class="step-tag" style="background:var(--blue-bg);color:#0C447C">Step 1 · 4세대 Ag/Ab 병합 검사</span>
+              <div class="step-desc">HIV-1/2 immunoassay · p24 항원 + 항체 동시 검출<br>윈도우 피리어드 ~13일로 단축 · 초기 스크리닝</div>
+              <div class="step-params">Se = 99.5% · Sp = 99.5% · Prior = 선택한 위험군 유병률</div>
+            </div>
+            <div><div class="step-ppv" id="sq1ppv">—</div><div class="step-ppv-sub">PPV (양성 시)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="branches">
+        <div class="branch" style="border-left:3px solid var(--green)">
+          <div class="branch-head" style="color:var(--green-dark)">(+) 반응성 → Step 2 진행</div>
+          <div class="branch-ppv" id="sq1pos">—</div>
+          <div class="branch-note">이 PPV가 Step 2의 새로운 Prior</div>
+        </div>
+        <div class="branch" style="border-left:3px solid var(--gray-mid)">
+          <div class="branch-head" style="color:var(--gray)">(−) 비반응성 → 종료</div>
+          <div class="branch-ppv" style="color:var(--gray-mid)">HIV-1 &amp; HIV-2 음성</div>
+          <div class="branch-note">NPV ≈ <span id="sq1npv">—</span></div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="vline" style="background:var(--green)"></div>
+          <div class="fdot" style="border-color:var(--green)"></div>
+          <div class="vline" style="background:var(--green)"></div>
+        </div>
+        <div class="fbody lit">
+          <div class="step-head">
+            <div>
+              <span class="step-tag" style="background:var(--green-bg);color:#085041">Step 2 · HIV-1/2 항체 감별 검사</span>
+              <div class="step-desc">Antibody differentiation immunoassay · HIV-1 vs HIV-2 구별<br>Step 1 양성 집단에 적용 → Prior가 이미 높은 상태</div>
+              <div class="step-params">Se = 99% · Sp = 99.9% · Prior = Step 1 PPV</div>
+            </div>
+            <div><div class="step-ppv" id="sq2ppv">—</div><div class="step-ppv-sub">PPV (HIV-1 or HIV-2 양성 시)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="branches">
+        <div class="branch" style="border-left:3px solid var(--green)">
+          <div class="branch-head" style="color:var(--green-dark)">HIV-1(+) 또는 HIV-2(+) → 확진</div>
+          <div class="branch-ppv" id="sq2pos">—</div>
+          <div class="branch-note">HIV-1 / HIV-2 / 동시감염 최종 확진</div>
+        </div>
+        <div class="branch" style="border-left:3px solid var(--gray-mid)">
+          <div class="branch-head" style="color:var(--gray)">(−) 또는 불확정 → Step 3</div>
+          <div class="branch-ppv" id="sq2neg">—</div>
+          <div class="branch-note">RNA arm Prior = <span id="sq2negPrior">—</span></div>
+        </div>
+      </div>
+
+      <!-- Step 3 RNA -->
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="vline" style="background:var(--gray-mid)"></div>
+          <div class="fdot" style="border-color:var(--purple)"></div>
+          <div class="vline" style="background:transparent"></div>
+        </div>
+        <div class="fbody lit">
+          <div class="step-head">
+            <div>
+              <span class="step-tag" style="background:var(--purple-bg);color:var(--purple-dark)">Step 3 · 핵산증폭 RNA (NAT) · 골드스탠다드</span>
+              <div class="step-desc">HIV-1 RNA 직접 검출 · 급성 감염(항체 형성 전) 확인<br>Step 2 음성·불확정 집단에 적용 → Prior 구조에 주목</div>
+              <div class="step-params">Se = 99% · Sp = 99.9% · Prior = RNA arm 내 HIV+ 비율</div>
+            </div>
+            <div><div class="step-ppv" id="sq3ppv">—</div><div class="step-ppv-sub">PPV (RNA+ 시)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="branches">
+        <div class="branch" style="border-left:3px solid var(--purple)">
+          <div class="branch-head" style="color:var(--purple-dark)">RNA(+) → Acute HIV-1 infection 확진</div>
+          <div class="branch-ppv" id="sq3pos">—</div>
+          <div class="branch-note">급성 감염 확진 · 즉각 치료 시작 권고</div>
+        </div>
+        <div class="branch" style="border-left:3px solid var(--gray-mid)">
+          <div class="branch-head" style="color:var(--gray)">RNA(−) → HIV-1 음성</div>
+          <div class="branch-ppv" style="color:var(--gray-mid)">최종 음성</div>
+          <div class="branch-note">Step 1 위양성으로 처리</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="freq-box" id="seqFreq"></div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">단계별 PPV 요약 비교</p>
+    <table class="comp-table" id="seqTable">
+      <thead><tr><th>단계</th><th>검사</th><th>Se</th><th>Sp</th><th>이 단계 후 PPV</th><th>의미</th></tr></thead>
+      <tbody id="seqTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PAGE: MATRIX ═══════════════════════════════════ -->
+<div id="page-matrix" class="page">
+  <div class="card">
+    <p class="card-title">Confusion Matrix — Step 1 기준 (4세대 Ag/Ab, Se=Sp=99.5%)</p>
+    <div class="group-selector" id="matrixBtns"></div>
+
+    <div class="cm-top-labels">
+      <div class="cm-top-label">실제 양성 (HIV+)</div>
+      <div class="cm-top-label">실제 음성 (HIV−)</div>
+    </div>
+    <div class="cm-grid">
+      <div class="cm-row-labels">
+        <div class="cm-row-label">검사<br>양성</div>
+        <div class="cm-row-label">검사<br>음성</div>
+      </div>
+      <div class="cm-cell cm-tp"><div class="cm-cell-label">TP · 진양성</div><div class="cm-cell-n" id="cmTP">—</div><div class="cm-cell-pct" id="cmTPpct">—</div><div class="cm-cell-desc">실제감염 · 검사양성</div></div>
+      <div class="cm-cell cm-fp"><div class="cm-cell-label">FP · 위양성</div><div class="cm-cell-n" id="cmFP">—</div><div class="cm-cell-pct" id="cmFPpct">—</div><div class="cm-cell-desc">비감염 · 검사양성</div></div>
+      <div class="cm-cell cm-fn"><div class="cm-cell-label">FN · 위음성</div><div class="cm-cell-n" id="cmFN">—</div><div class="cm-cell-pct" id="cmFNpct">—</div><div class="cm-cell-desc">실제감염 · 검사음성</div></div>
+      <div class="cm-cell cm-tn"><div class="cm-cell-label">TN · 진음성</div><div class="cm-cell-n" id="cmTN">—</div><div class="cm-cell-pct" id="cmTNpct">—</div><div class="cm-cell-desc">비감염 · 검사음성</div></div>
+    </div>
+    <div class="cm-totals">
+      <div style="font-size:10px;color:var(--text3);display:flex;align-items:center;justify-content:flex-end;padding-right:8px">합계</div>
+      <div class="cm-total-cell">HIV+ 총 <strong id="cmTotInf">—</strong>명</div>
+      <div class="cm-total-cell">HIV− 총 <strong id="cmTotHlt">—</strong>명</div>
+    </div>
+    <div class="cm-stats">
+      <div class="cm-stat"><span class="cm-stat-l">PPV = TP÷(TP+FP)</span><span class="cm-stat-v" id="cmPPV" style="color:var(--green)">—</span></div>
+      <div class="cm-stat"><span class="cm-stat-l">NPV = TN÷(TN+FN)</span><span class="cm-stat-v" id="cmNPV" style="color:var(--blue)">—</span></div>
+      <div class="cm-stat"><span class="cm-stat-l">민감도 Se (고정)</span><span class="cm-stat-v" style="color:var(--amber)">99.5%</span></div>
+      <div class="cm-stat"><span class="cm-stat-l">특이도 Sp (고정)</span><span class="cm-stat-v" style="color:var(--amber)">99.5%</span></div>
+    </div>
+    <div class="insight" id="cmInsight"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PAGE: CURVE ═══════════════════════════════════ -->
+<div id="page-curve" class="page">
+  <div class="card">
+    <p class="card-title">사전 확률 → PPV 변화 곡선 (Se=Sp=99.5% · 로그 스케일)</p>
+    <div class="chart-wrap"><canvas id="ppvChart"></canvas></div>
+    <div class="chart-legend" id="curveLegend"></div>
+    <p style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px">점: 각 위험군 위치 · 점선: PPV=50% 기준선</p>
+  </div>
+
+  <div class="card">
+    <p class="card-title">위험군별 Step 1 / Step 2 / RNA PPV 비교</p>
+    <div class="chart-wrap" style="height:280px"><canvas id="stepChart"></canvas></div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--text2)">
+      <span><span class="dot" style="background:#378ADD"></span>Step 1 PPV</span>
+      <span><span class="dot" style="background:#1D9E75"></span>Step 2 PPV (HIV-1/2+)</span>
+      <span><span class="dot" style="background:#7F77DD"></span>RNA PPV (Step 3+)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">전체 위험군 PPV 요약 테이블</p>
+    <table class="comp-table">
+      <thead><tr><th>위험군</th><th>유병률</th><th>Step 1 PPV</th><th>Step 2 PPV</th><th>RNA PPV</th><th>임상 해석</th></tr></thead>
+      <tbody id="summaryBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const SE1=0.995,SP1=0.995,SE2=0.99,SP2=0.999,SE3=0.99,SP3=0.999,N=100000;
+const groups=[
+  {id:'blood',   label:'헌혈자',        prev:0.00003,note:'헌혈자 선별 (~0.003%)',color:'#3B8BD4'},
+  {id:'gen',     label:'일반 인구',      prev:0.00015,note:'위험행동 없는 일반인 (~0.015%)',color:'#1D9E75'},
+  {id:'needle',  label:'의료인 침습사고',prev:0.003,  note:'HIV+ 혈액 침습사고 (~0.3%)',color:'#639922'},
+  {id:'sti',     label:'성병 클리닉',    prev:0.015,  note:'STI 클리닉 내원 (~1.5%)',color:'#EF9F27'},
+  {id:'ivdu',    label:'정맥마약',       prev:0.06,   note:'주사기 공유 고위험 (~6%)',color:'#D85A30'},
+  {id:'msm',     label:'MSM',           prev:0.08,   note:'남성 동성애자 (~8%)',color:'#7F77DD'},
+  {id:'partner', label:'HIV+ 파트너',   prev:0.20,   note:'HIV+ 확진자의 파트너 (~20%)',color:'#E24B4A'},
+];
+
+function ppvPos(p,se,sp){const tp=se*p,fp=(1-sp)*(1-p);return(tp+fp>0)?tp/(tp+fp):0}
+function npvVal(p,se,sp){const tn=sp*(1-p),fn=(1-se)*p;return(tn+fn>0)?tn/(tn+fn):0}
+function fmt(v,d=1){if(isNaN(v)||v===null)return'—';if(v*100>=99.99)return'≥99.99%';return(v*100).toFixed(d)+'%'}
+function fmtN(n){return Math.round(n).toLocaleString('ko-KR')}
+function fmtP(p){if(p<0.0001)return(p*100).toFixed(4)+'%';if(p<0.001)return(p*100).toFixed(3)+'%';if(p<0.1)return(p*100).toFixed(2)+'%';return(p*100).toFixed(1)+'%'}
+function ppvColor(v){const p=v*100;if(p<30)return'#A32D2D';if(p<60)return'#BA7517';if(p<90)return'#1D9E75';return'#0F6E56'}
+
+function calcAll(p){
+  const infected=Math.round(N*p),healthy=N-infected;
+  const tp1=Math.round(infected*SE1),fp1=Math.round(healthy*(1-SP1));
+  const fn1=infected-tp1,tn1=healthy-fp1;
+  const pv1=ppvPos(p,SE1,SP1),nv1=npvVal(p,SE1,SP1);
+  const tp2=tp1*SE2,fp2=fp1*(1-SP2),fn2=tp1*(1-SE2),tn2=fp1*SP2;
+  const totS2p=tp2+fp2;
+  const pv2=totS2p>0?tp2/totS2p:0;
+  const tp3=fn2*SE3,fp3=tn2*(1-SP3);
+  const totRp=tp3+fp3;
+  const pv3=totRp>0?tp3/totRp:0;
+  const prior_rna=fn2+tn2>0?fn2/(fn2+tn2):0;
+  return{infected,healthy,tp1,fp1,fn1,tn1,pv1,nv1,tp2,fp2,fn2,tn2,totS2p,pv2,tp3,fp3,totRp,pv3,prior_rna};
+}
+
+// ── Single page ──
+function renderSingle(g){
+  const d=calcAll(g.prev);
+  const p=g.prev;
+  document.getElementById('s1prev').textContent=fmtP(p);
+  document.getElementById('s1prevNote').textContent=g.note;
+  const el=document.getElementById('s1ppv');
+  el.textContent=fmt(d.pv1);el.style.color=ppvColor(d.pv1);
+  const pn=document.getElementById('s1ppvNote');
+  const pp=d.pv1*100;
+  pn.textContent=pp<10?'⚠ 대부분 위양성':pp<50?'⚠ 위양성 과반':pp<80?'확인 검사 권고':'양성 신뢰도 높음';
+  document.getElementById('s1npv').textContent=fmt(d.nv1,2);
+  document.getElementById('sBar1').style.width=pp.toFixed(2)+'%';
+  document.getElementById('sBar2').style.width=(100-pp).toFixed(2)+'%';
+  document.getElementById('s1TP').textContent=fmtN(d.tp1);
+  document.getElementById('s1FP').textContent=fmtN(d.fp1);
+  document.getElementById('s1FN').textContent=fmtN(d.fn1);
+  document.getElementById('s1TN').textContent=fmtN(d.tn1);
+  const totP=d.tp1+d.fp1;
+  let warn='';
+  if(pp<10)warn=`<br><span style="color:var(--red)">⚠ 양성 ${fmtN(totP)}명 중 진양성 고작 ${fmtN(d.tp1)}명 (${pp.toFixed(1)}%) — 위양성 압도적</span>`;
+  else if(pp<50)warn=`<br>→ 양성 <strong>${fmtN(totP)}명</strong> 중 진양성은 <strong>${pp.toFixed(1)}%</strong>뿐. 확진 검사 필수.`;
+  document.getElementById('s1note').innerHTML=`<strong>${g.note}</strong><br>10만 명 중 HIV+ <strong>${fmtN(d.infected)}명</strong> / HIV- <strong>${fmtN(d.healthy)}명</strong><br>양성 반응 총 <strong>${fmtN(totP)}명</strong> = 진양성 <strong style="color:var(--green)">${fmtN(d.tp1)}명</strong> + 위양성 <strong style="color:var(--red-mid)">${fmtN(d.fp1)}명</strong>${warn}`;
+}
+
+// ── Sequential page ──
+function renderSeq(g){
+  const d=calcAll(g.prev);
+  document.getElementById('sq1ppv').textContent=fmt(d.pv1);document.getElementById('sq1ppv').style.color=ppvColor(d.pv1);
+  document.getElementById('sq1pos').textContent=fmt(d.pv1);document.getElementById('sq1pos').style.color=ppvColor(d.pv1);
+  document.getElementById('sq1npv').textContent=fmt(d.nv1,2);
+  document.getElementById('sq2ppv').textContent=fmt(d.pv2);document.getElementById('sq2ppv').style.color=ppvColor(d.pv2);
+  document.getElementById('sq2pos').textContent=fmt(d.pv2);document.getElementById('sq2pos').style.color=ppvColor(d.pv2);
+  document.getElementById('sq2neg').textContent=fmtN(d.fn2+d.tn2)+'명 진입';
+  document.getElementById('sq2negPrior').textContent=fmt(d.prior_rna,3);
+  document.getElementById('sq3ppv').textContent=fmt(d.pv3);document.getElementById('sq3ppv').style.color=ppvColor(d.pv3);
+  document.getElementById('sq3pos').textContent=fmt(d.pv3);document.getElementById('sq3pos').style.color=ppvColor(d.pv3);
+  // Freq
+  const warn2=d.pv2*100<50?'<span style="color:var(--red)"> ⚠ 위양성 주의</span>':d.pv2*100>=99?'<span style="color:var(--green)"> ✓ 매우 높은 신뢰도</span>':'';
+  const warn3=d.pv3*100<30?'<span style="color:var(--red)"> ⚠ RNA arm Prior 극히 낮음</span>':d.pv3*100>=95?'<span style="color:var(--purple-dark)"> ✓ RNA도 신뢰도 높음</span>':'';
+  document.getElementById('seqFreq').innerHTML=
+    `<strong>${g.note}</strong> · 10만 명 중 HIV+ <strong>${fmtN(d.infected)}명</strong><br>`+
+    `Step 1 양성: <strong>${fmtN(d.tp1+d.fp1)}명</strong> (진양성 ${fmtN(d.tp1)} + 위양성 ${fmtN(d.fp1)}) → PPV ${fmt(d.pv1)}<br>`+
+    `Step 2 HIV-1/2+: <strong>${fmtN(d.totS2p)}명</strong> (진양성 ${fmtN(d.tp2)} + 위양성 ${fmtN(d.fp2)}) → PPV <strong>${fmt(d.pv2)}</strong>${warn2}<br>`+
+    `RNA arm 진입: <strong>${fmtN(d.fn2+d.tn2)}명</strong> (Prior ${fmt(d.prior_rna,3)}) → RNA+ <strong>${fmtN(d.totRp)}명</strong> (진양성 ${fmtN(d.tp3)} + 위양성 ${fmtN(d.fp3)}) → PPV <strong>${fmt(d.pv3)}</strong>${warn3}`;
+  // Table
+  const col=v=>`<strong style="color:${ppvColor(v)}">${fmt(v)}</strong>`;
+  document.getElementById('seqTableBody').innerHTML=
+    `<tr><td>Step 1</td><td>4세대 Ag/Ab 병합</td><td>99.5%</td><td>99.5%</td><td>${col(d.pv1)}</td><td>초기 스크리닝</td></tr>`+
+    `<tr><td>Step 2</td><td>HIV-1/2 항체 감별</td><td>99%</td><td>99.9%</td><td>${col(d.pv2)}</td><td>Step 1+ 집단에 적용</td></tr>`+
+    `<tr><td>Step 3</td><td>RNA NAT</td><td>99%</td><td>99.9%</td><td>${col(d.pv3)}</td><td>Step 2 불확정 arm</td></tr>`;
+}
+
+// ── Matrix page ──
+function renderMatrix(g){
+  const d=calcAll(g.prev);
+  const pct=v=>'전체의 '+(v/N*100).toFixed(2)+'%';
+  const sz=(v)=>{const r=Math.sqrt(v/Math.max(d.tp1,d.fp1,d.fn1,d.tn1,1));return Math.max(14,Math.min(28,14+r*14))+'px'};
+  document.getElementById('cmTP').textContent=fmtN(d.tp1);document.getElementById('cmTP').style.fontSize=sz(d.tp1);
+  document.getElementById('cmTPpct').textContent=pct(d.tp1);
+  document.getElementById('cmFP').textContent=fmtN(d.fp1);document.getElementById('cmFP').style.fontSize=sz(d.fp1);
+  document.getElementById('cmFPpct').textContent=pct(d.fp1);
+  document.getElementById('cmFN').textContent=fmtN(d.fn1);document.getElementById('cmFN').style.fontSize=sz(d.fn1);
+  document.getElementById('cmFNpct').textContent=pct(d.fn1);
+  document.getElementById('cmTN').textContent=fmtN(d.tn1);document.getElementById('cmTN').style.fontSize=sz(d.tn1);
+  document.getElementById('cmTNpct').textContent=pct(d.tn1);
+  document.getElementById('cmTotInf').textContent=fmtN(d.infected);
+  document.getElementById('cmTotHlt').textContent=fmtN(d.healthy);
+  const ppvEl=document.getElementById('cmPPV');ppvEl.textContent=fmt(d.pv1);ppvEl.style.color=ppvColor(d.pv1);
+  document.getElementById('cmNPV').textContent=fmt(d.nv1,2);
+  const pp=d.pv1*100;
+  let ins='',cls='insight';
+  if(pp<10){ins=`<strong>⚠ 위양성 주의:</strong> 양성 ${fmtN(d.tp1+d.fp1)}명 중 <strong>${(100-pp).toFixed(0)}%가 실제 비감염자</strong>. Step 2·3 확인 필수. Bayes 관점에서 낮은 Prior는 LR이 높아도 사후 확률이 낮음.`;cls='insight';}
+  else if(pp<50){ins=`<strong>주의 구간:</strong> 양성 중 위양성이 과반. 이 Posterior(${pp.toFixed(0)}%)를 Step 2의 Prior로 삼으면 PPV ${fmt(d.pv2)}로 급등.`;}
+  else if(pp<85){ins=`<strong>중간 신뢰:</strong> PPV ${pp.toFixed(0)}%. 추가 확인 권장. Posterior가 치료 역치를 넘었는지 확인.`;cls='insight info';}
+  else{ins=`<strong>높은 신뢰:</strong> 양성의 ${pp.toFixed(0)}%가 실제 감염. TP ${fmtN(d.tp1)}명 vs FP ${fmtN(d.fp1)}명.`;cls='insight success';}
+  const insEl=document.getElementById('cmInsight');insEl.innerHTML=ins;insEl.className=cls;
+}
+
+// ── Curve page ──
+let ppvChartObj=null,stepChartObj=null;
+function initCurve(){
+  if(ppvChartObj)return;
+  const lineData=[];
+  for(let i=0;i<=500;i++){
+    const lp=Math.log10(0.001)+(Math.log10(60)-Math.log10(0.001))*i/500;
+    const pPct=Math.pow(10,lp);
+    lineData.push({x:pPct,y:ppvPos(pPct/100,SE1,SP1)*100});
+  }
+  // Legend
+  const leg=document.getElementById('curveLegend');
+  groups.forEach(g=>{
+    const el=document.createElement('span');el.className='cl';
+    el.innerHTML=`<span class="cl-dot" style="background:${g.color}"></span>${g.label} (${fmtP(g.prev)})`;
+    leg.appendChild(el);
+  });
+  ppvChartObj=new Chart(document.getElementById('ppvChart'),{
+    type:'scatter',
+    data:{datasets:[
+      {type:'line',data:lineData,borderColor:'#3b82f6',borderWidth:2,pointRadius:0,tension:.15,fill:false,order:3},
+      {type:'line',data:[{x:.001,y:50},{x:60,y:50}],borderColor:'#94a3b8',borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false,order:4},
+      ...groups.map(g=>({type:'scatter',label:g.label,data:[{x:g.prev*100,y:ppvPos(g.prev,SE1,SP1)*100}],backgroundColor:g.color,borderColor:'#fff',borderWidth:2,pointRadius:8,pointHoverRadius:11,order:1}))
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>groups[c[0].datasetIndex-2]?.label||'PPV 곡선',label:c=>{const g=groups[c.datasetIndex-2];return g?[`사전확률: ${fmtP(g.prev)}`,`PPV: ${(ppvPos(g.prev,SE1,SP1)*100).toFixed(1)}%`]:`PPV: ${c.parsed.y.toFixed(1)}%`}}}},
+    scales:{x:{type:'logarithmic',min:.001,max:60,title:{display:true,text:'사전 확률 (%)',font:{size:11},color:'#64748b'},ticks:{callback:v=>{const nv=[.001,.003,.01,.03,.1,.3,1,3,10,30];const r=parseFloat(v.toPrecision(1));return nv.some(n=>Math.abs(n-r)<1e-9)?r+'%':''},font:{size:10},color:'#64748b'},grid:{color:'rgba(148,163,184,.15)'}},y:{min:0,max:100,title:{display:true,text:'PPV (%)',font:{size:11},color:'#64748b'},ticks:{callback:v=>v+'%',font:{size:10},color:'#64748b'},grid:{color:'rgba(148,163,184,.15)'}}}}
+  });
+  // Step chart
+  const labels=groups.map(g=>g.label);
+  const s1data=groups.map(g=>+(ppvPos(g.prev,SE1,SP1)*100).toFixed(1));
+  const s2data=groups.map(g=>{const d=calcAll(g.prev);return+(d.pv2*100).toFixed(1)});
+  const s3data=groups.map(g=>{const d=calcAll(g.prev);return+(d.pv3*100).toFixed(1)});
+  stepChartObj=new Chart(document.getElementById('stepChart'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Step 1 PPV',data:s1data,backgroundColor:'#93c5fd',borderRadius:4},
+      {label:'Step 2 PPV',data:s2data,backgroundColor:'#6ee7b7',borderRadius:4},
+      {label:'RNA PPV',data:s3data,backgroundColor:'#c4b5fd',borderRadius:4},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`}}},
+    scales:{x:{ticks:{font:{size:11},color:'#475569'},grid:{display:false}},y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10},color:'#64748b'},grid:{color:'rgba(148,163,184,.15)'}}}}
+  });
+  // Summary table
+  const body=document.getElementById('summaryBody');
+  body.innerHTML=groups.map(g=>{
+    const d=calcAll(g.prev);
+    const col=v=>`<span style="color:${ppvColor(v)};font-weight:700">${fmt(v)}</span>`;
+    let interp='';
+    if(d.pv1*100<10)interp='<span class="badge" style="background:#fee2e2;color:#991b1b">저위험 · 위양성 주의</span>';
+    else if(d.pv2*100>=99)interp='<span class="badge" style="background:#d1fae5;color:#065f46">고위험 · Step2로 확진</span>';
+    else interp='<span class="badge" style="background:#fef3c7;color:#92400e">중간 · 확인 필요</span>';
+    return`<tr><td>${g.label}</td><td>${fmtP(g.prev)}</td><td>${col(d.pv1)}</td><td>${col(d.pv2)}</td><td>${col(d.pv3)}</td><td>${interp}</td></tr>`;
+  }).join('');
+}
+
+// ── Build buttons ──
+function makeButtons(containerId, renderFn){
+  const row=document.getElementById(containerId);
+  let activeId=groups[1].id;
+  groups.forEach(g=>{
+    const b=document.createElement('button');
+    b.className='gc-btn'+(g.id===activeId?' active':'');
+    b.textContent=g.label;
+    b.onclick=()=>{row.querySelectorAll('.gc-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');activeId=g.id;renderFn(g);};
+    row.appendChild(b);
+  });
+  renderFn(groups[1]);
+}
+makeButtons('singleBtns',renderSingle);
+makeButtons('seqBtns',renderSeq);
+makeButtons('matrixBtns',renderMatrix);
+
+// ── Nav ──
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+  document.getElementById('page-'+id).classList.add('show');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if(id==='curve')initCurve();
+}
+</script>
+</body>
+</html>
